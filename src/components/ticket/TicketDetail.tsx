@@ -1,0 +1,151 @@
+import { 
+  MessageSquare, 
+  Clock, 
+  Sparkles, 
+  Calendar, 
+  ShieldCheck, 
+  Smartphone,
+  Info
+} from 'lucide-react';
+import { TicketConUrgencia, CanalOrigen } from '@/types';
+import { formatearFecha } from '@/lib/utils';
+import { StatusBadge } from '../shared';
+import { UrgencyBadge } from '../dashboard';
+import { cn } from '@/lib/utils';
+import { SECRETARIAS_MOCK } from '@/services/mockData';
+
+interface TicketDetailProps {
+  ticket: TicketConUrgencia;
+}
+
+const CanalEntry = ({ canal }: { canal: CanalOrigen }) => {
+  const icons = {
+    WhatsApp: Smartphone,
+    Email: MessageSquare,
+    Twitter: MessageSquare,
+    Facebook: MessageSquare,
+    Web: MessageSquare,
+    Presencial: MessageSquare,
+  };
+  const Icon = icons[canal] || Info;
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-gov-gray-500 font-medium">
+      <Icon size={14} className="text-gov-gray-400" />
+      <span>Recibido vía {canal}</span>
+    </div>
+  );
+};
+
+export default function TicketDetail({ ticket }: TicketDetailProps) {
+  const secretaria = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria);
+  
+  const isCritical = ticket.nivelUrgencia === 'critico';
+  const urgencyColor = isCritical ? 'text-sem-red' : ticket.nivelUrgencia === 'atencion' ? 'text-sem-yellow' : 'text-sem-green';
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* 1. CABECERA DEL TICKET */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-mono font-bold text-gov-gray-400 px-2 py-1 bg-gov-gray-100 rounded">
+            {ticket.idTicket}
+          </span>
+          <StatusBadge estado={ticket.estado} />
+          <UrgencyBadge nivelUrgencia={ticket.nivelUrgencia} diasRestantes={ticket.diasRestantes} />
+        </div>
+        
+        <div>
+          <h1 className="text-2xl font-bold text-gov-gray-900 tracking-tight">
+            {ticket.nombreCiudadano}
+          </h1>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-sm font-semibold text-gov-blue-700 bg-gov-blue-100/50 px-2 py-0.5 rounded">
+              {ticket.tipoSolicitud}
+            </span>
+            <CanalEntry canal={ticket.canalOrigen} />
+          </div>
+        </div>
+      </div>
+
+      {/* 2. PANEL DE METADATOS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          { label: 'Fecha de Creación', value: formatearFecha(ticket.fechaCreacion), icon: Calendar },
+          { 
+            label: 'Fecha Límite Legal', 
+            value: formatearFecha(ticket.fechaLimite), 
+            icon: Calendar,
+            className: isCritical ? 'text-sem-red font-bold' : ''
+          },
+          { 
+            label: 'Días Restantes', 
+            value: `${ticket.diasRestantes} días hábiles`, 
+            icon: Clock,
+            className: cn("font-bold", urgencyColor)
+          },
+          { 
+            label: 'Dependencia Responsable', 
+            value: (
+              <div className="flex items-center gap-2">
+                <span 
+                  className="w-2.5 h-2.5 rounded-full shrink-0" 
+                  style={{ backgroundColor: secretaria?.colorIdentificador || '#ccc' }}
+                />
+                {secretaria?.nombre || 'Secretaría no asignada'}
+              </div>
+            ), 
+            icon: ShieldCheck 
+          },
+        ].map((item, idx) => (
+          <div key={idx} className="bg-white border border-gov-gray-100 p-4 rounded-xl shadow-sm space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gov-gray-400 uppercase tracking-wider">
+              <item.icon size={12} />
+              {item.label}
+            </div>
+            <div className={cn("text-sm text-gov-gray-900 font-medium", item.className)}>
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 3. SECCIÓN "MENSAJE ORIGINAL" */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 uppercase tracking-wide">
+          <MessageSquare size={18} className="text-gov-blue-700" />
+          Mensaje Original del Ciudadano
+        </div>
+        <div className="relative bg-gov-gray-50 border border-gov-gray-200 rounded-xl p-6">
+          <div className="absolute top-0 right-6 -translate-y-1/2 bg-white px-3 py-0.5 border border-gov-gray-200 rounded-full text-[10px] font-bold text-gov-gray-500 uppercase">
+            {ticket.canalOrigen}
+          </div>
+          <p className="text-sm text-gov-gray-700 leading-relaxed whitespace-pre-wrap font-medium italic italic-none">
+            &quot;{ticket.contenidoRaw}&quot;
+          </p>
+        </div>
+      </div>
+
+      {/* 4. SECCIÓN "ANÁLISIS DE IA" */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 uppercase tracking-wide">
+          <Sparkles size={18} className="text-gov-cyan-400" />
+          Análisis de IA GovTech
+        </div>
+        
+        {!ticket.resumenIa ? (
+          <div className="flex items-center gap-3 p-4 bg-gov-gray-50 border border-dashed border-gov-gray-300 rounded-xl text-gov-gray-500 italic">
+            <Clock size={16} />
+            <span className="text-sm font-medium">La IA aún no ha terminado de procesar este ticket...</span>
+          </div>
+        ) : (
+          <div className="bg-gov-cyan-100/20 border-l-4 border-gov-cyan-400 p-6 rounded-r-xl">
+             <div className="text-[10px] font-black text-gov-cyan-500 uppercase mb-2">Resumen ejecutivo generado automáticamente</div>
+            <p className="text-sm text-gov-gray-800 leading-relaxed font-semibold">
+              {ticket.resumenIa}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
