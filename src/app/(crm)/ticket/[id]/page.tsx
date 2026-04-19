@@ -41,7 +41,7 @@ export default function TicketDetailPage() {
   if (error && !ticket) {
     const isUnauthorized = error.includes('permisos');
     return (
-      <div className="bg-white rounded-2xl border border-gov-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gov-gray-100 dark:border-dark-border shadow-sm overflow-hidden">
         <EmptyState 
           variant={isUnauthorized ? 'unauthorized' : 'error'}
           customMessage={error}
@@ -60,7 +60,7 @@ export default function TicketDetailPage() {
       {/* Botón de regreso */}
       <button 
         onClick={() => router.push('/dashboard')} 
-        className="flex items-center gap-2 text-sm font-bold text-gov-gray-500 hover:text-gov-blue-700 transition-colors group"
+        className="flex items-center gap-2 text-sm font-bold text-gov-gray-500 dark:text-dark-muted hover:text-gov-blue-700 dark:hover:text-dark-cyan transition-colors group"
       >
         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> 
         Volver a Bandeja de Entrada
@@ -69,7 +69,7 @@ export default function TicketDetailPage() {
       {/* Layout de dos columnas */}
       <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-8 items-start">
         {/* Columna Izquierda: Información del Ticket */}
-        <section className="bg-white rounded-2xl border border-gov-gray-100 shadow-sm p-8">
+        <section className="bg-white dark:bg-dark-surface rounded-2xl border border-gov-gray-100 dark:border-dark-border shadow-sm p-8">
           <TicketDetail
             ticket={ticket}
             resumenCargando={resumenCargando}

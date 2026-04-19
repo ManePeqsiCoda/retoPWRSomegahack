@@ -5,13 +5,13 @@ import { cn } from '@/lib/utils';
  * Imitación exacta de la estructura de TicketRow para el Dashboard.
  */
 export default function SkeletonRow() {
-  const skeletonBase = "animate-pulse bg-gov-gray-100 rounded";
+  const skeletonBase = "animate-pulse bg-gov-gray-100 dark:bg-dark-border rounded";
 
   return (
-    <tr className="border-b border-gov-gray-100">
+    <tr className="border-b border-gov-gray-100 dark:border-dark-border">
       {/* 1. Urgency Circle */}
       <td className="py-4 pl-4 w-12 text-center">
-        <div className="inline-block w-3 h-3 rounded-full bg-gov-gray-200 animate-pulse" />
+        <div className="inline-block w-3 h-3 rounded-full bg-gov-gray-200 dark:bg-dark-border animate-pulse" />
       </td>
 
       {/* 2. ID / Canal */}
@@ -58,7 +58,7 @@ export default function SkeletonRow() {
  * Estructura de carga para la vista de detalle del ticket.
  */
 export function SkeletonDetailPage() {
-  const skeletonBase = "animate-pulse bg-gov-gray-100 rounded";
+  const skeletonBase = "animate-pulse bg-gov-gray-100 dark:bg-dark-border rounded";
 
   return (
     <div className="space-y-6">
@@ -67,7 +67,7 @@ export function SkeletonDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-8">
         {/* Columna Izquierda: Información */}
-        <div className="bg-white rounded-2xl border border-gov-gray-100 p-8 space-y-8">
+        <div className="bg-white dark:bg-dark-surface rounded-2xl border border-gov-gray-100 dark:border-dark-border p-8 space-y-8">
           {/* Cabecera */}
           <div className="space-y-4">
             <div className="flex gap-2">
@@ -100,7 +100,7 @@ export function SkeletonDetailPage() {
 
         {/* Columna Derecha: Editor */}
         <div className="space-y-6">
-          <div className="bg-white border border-gov-gray-100 rounded-2xl p-6 space-y-6">
+          <div className="bg-white dark:bg-dark-surface border border-gov-gray-100 dark:border-dark-border rounded-2xl p-6 space-y-6">
             <div className={cn(skeletonBase, "w-1/2 h-6")} />
             <div className={cn(skeletonBase, "w-full h-64 rounded-xl")} />
             <div className={cn(skeletonBase, "w-full h-12 rounded-lg")} />

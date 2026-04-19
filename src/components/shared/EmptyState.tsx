@@ -48,15 +48,15 @@ export default function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-      <div className={cn("p-4 rounded-full bg-white border border-gov-gray-50 shadow-sm mb-4", config.iconClass)}>
+      <div className={cn("p-4 rounded-full bg-white dark:bg-dark-surface border border-gov-gray-50 dark:border-dark-border shadow-sm mb-4", config.iconClass)}>
         <Icon size={48} strokeWidth={1.5} />
       </div>
       
-      <h3 className="text-lg font-bold text-gov-gray-900 mb-1 leading-tight">
+      <h3 className="text-lg font-bold text-gov-gray-900 dark:text-dark-text mb-1 leading-tight">
         {config.title}
       </h3>
       
-      <p className="text-sm text-gov-gray-500 max-w-xs leading-relaxed">
+      <p className="text-sm text-gov-gray-500 dark:text-dark-muted max-w-xs leading-relaxed">
         {customMessage || config.description}
       </p>
 

@@ -29,10 +29,10 @@ export default function EmailStatusTracker({ idTicket }: EmailStatusTrackerProps
   ].sort((a, b) => new Date(b.fechaEnvio).getTime() - new Date(a.fechaEnvio).getTime());
 
   const CONFIG_ESTADO = {
-    enviado:  { icon: CheckCircle2, color: 'text-[#00875A]',   bg: 'bg-[#ECFDF5]',  label: 'Enviado'  },
-    simulado: { icon: Zap,          color: 'text-[#D4A017]', bg: 'bg-[#FDF3D0]',  label: 'Simulado' },
-    fallido:  { icon: AlertCircle,  color: 'text-[#DC2626]',      bg: 'bg-[#FEF2F2]',    label: 'Fallido'  },
-    pendiente:{ icon: Clock,        color: 'text-[#6B7A90]',        bg: 'bg-[#F4F6F9]',  label: 'Pendiente'},
+    enviado:  { icon: CheckCircle2, color: 'text-[#00875A]',   bg: 'bg-[#ECFDF5] dark:bg-sem-green/10',  label: 'Enviado'  },
+    simulado: { icon: Zap,          color: 'text-[#D4A017]', bg: 'bg-[#FDF3D0] dark:bg-[#D4A017]/10',  label: 'Simulado' },
+    fallido:  { icon: AlertCircle,  color: 'text-[#DC2626]',      bg: 'bg-[#FEF2F2] dark:bg-sem-red/10',    label: 'Fallido'  },
+    pendiente:{ icon: Clock,        color: 'text-[#6B7A90]',        bg: 'bg-[#F4F6F9] dark:bg-dark-border',  label: 'Pendiente'},
   } as const;
 
   const LABEL_TIPO: Record<string, string> = {
@@ -92,7 +92,7 @@ export default function EmailStatusTracker({ idTicket }: EmailStatusTrackerProps
                       {cfg.label}
                     </span>
                     {reg.estado === 'simulado' && (
-                      <span className="text-[10px] bg-[#FDF3D0] text-[#D4A017]
+                      <span className="text-[10px] bg-[#FDF3D0] dark:bg-[#D4A017]/10 text-[#D4A017]
                         px-1.5 py-0.5 rounded-full font-bold border border-[#D4A017]/20">
                         DEMO
                       </span>
@@ -110,7 +110,7 @@ export default function EmailStatusTracker({ idTicket }: EmailStatusTrackerProps
                     )}
                   </p>
                   {reg.errorMensaje && (
-                    <p className="text-[11px] text-[#DC2626] mt-1 bg-[#FEF2F2]
+                    <p className="text-[11px] text-[#DC2626] mt-1 bg-[#FEF2F2] dark:bg-sem-red/10
                       px-2 py-1 rounded">
                       ⚠ {reg.errorMensaje}
                     </p>

@@ -100,7 +100,7 @@ function KanbanCard({ ticket, isDragging }: { ticket: TicketConUrgencia; isDragg
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-3 border-t border-gov-gray-50">
+      <div className="flex justify-between items-center pt-3 border-t border-gov-gray-50 dark:border-dark-border">
         <span className="text-[10px] font-medium text-gov-gray-400">
           {formatearFecha(ticket.fechaCreacion)}
         </span>
