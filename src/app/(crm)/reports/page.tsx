@@ -19,6 +19,7 @@ export default function ReportsPage() {
     distribucionPorTipo, 
     distribucionPorCanal, 
     tendenciaSemanal,
+    tendenciaDiaria,
     isLoading 
   } = useAnalytics();
   
