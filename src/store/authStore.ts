@@ -24,7 +24,7 @@ interface AuthState {
 
 // ── Credenciales hardcodeadas ──
 const HARDCODED_USERS: Record<string, { password: string; user: Usuario; mode: DataMode }> = {
-  'bananonbananin828@gmail.com': {
+  'rraliadosteam@gmail.com': {
     password: 'CRMadmin123',
     mode: 'live',
     user: {
