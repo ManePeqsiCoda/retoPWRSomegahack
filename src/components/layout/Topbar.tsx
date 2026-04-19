@@ -75,7 +75,7 @@ export default function Topbar({ title, onMenuClick }: TopbarProps) {
           title="Cerrar sesión"
           aria-label="Cerrar sesión"
         >
-          <LogOut size={18} md:size={20} />
+          <LogOut className="w-[18px] h-[18px] md:w-5 md:h-5" />
         </button>
       </div>
     </header>
