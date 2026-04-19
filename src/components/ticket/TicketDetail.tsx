@@ -5,7 +5,9 @@ import {
   Calendar, 
   ShieldCheck, 
   Smartphone,
-  Info
+  Info,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { TicketConUrgencia, CanalOrigen } from '@/types';
 import { formatearFecha } from '@/lib/utils';
@@ -16,6 +18,10 @@ import { SECRETARIAS_MOCK } from '@/services/mockData';
 
 interface TicketDetailProps {
   ticket: TicketConUrgencia;
+  /** Carga del resumen ejecutivo vía gateway (NEXT_PUBLIC_IA_HABILITADA). */
+  resumenCargando?: boolean;
+  /** Fallo al generar resumen en vivo; el texto mostrado puede ser el mock. */
+  resumenError?: string | null;
 }
 
 const CanalEntry = ({ canal }: { canal: CanalOrigen }) => {
@@ -36,7 +42,11 @@ const CanalEntry = ({ canal }: { canal: CanalOrigen }) => {
   );
 };
 
-export default function TicketDetail({ ticket }: TicketDetailProps) {
+export default function TicketDetail({
+  ticket,
+  resumenCargando = false,
+  resumenError = null,
+}: TicketDetailProps) {
   const secretaria = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria);
   
   const isCritical = ticket.nivelUrgencia === 'critico';
@@ -132,17 +142,40 @@ export default function TicketDetail({ ticket }: TicketDetailProps) {
           Análisis de IA GovTech
         </div>
         
-        {!ticket.resumenIa ? (
+        {resumenCargando ? (
+          <div className="flex items-center gap-3 p-4 bg-gov-cyan-50/40 border border-gov-cyan-200/60 rounded-xl text-gov-gray-700">
+            <Loader2 size={18} className="text-gov-cyan-500 animate-spin shrink-0" />
+            <span className="text-sm font-medium">
+              Generando resumen ejecutivo con el gateway (PQRSD-Assistant)…
+            </span>
+          </div>
+        ) : ticket.resumenIa ? (
+          <div className="bg-gov-cyan-100/20 border-l-4 border-gov-cyan-400 p-6 rounded-r-xl space-y-2">
+            <div className="text-[10px] font-black text-gov-cyan-500 uppercase mb-2">
+              Resumen ejecutivo generado automáticamente
+            </div>
+            <p className="text-sm text-gov-gray-800 leading-relaxed font-semibold whitespace-pre-wrap">
+              {ticket.resumenIa}
+            </p>
+            {resumenError ? (
+              <div className="flex items-start gap-2 pt-2 text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200/60 rounded-lg px-3 py-2">
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                <span>
+                  No se pudo generar el resumen en vivo ({resumenError}). Si ves texto arriba, es el
+                  borrador local de la sesión.
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : resumenError ? (
+          <div className="flex items-start gap-3 p-4 bg-sem-red-bg border border-sem-red/20 rounded-xl text-sem-red text-sm">
+            <AlertCircle size={18} className="shrink-0" />
+            <span>No se pudo obtener el resumen ejecutivo: {resumenError}</span>
+          </div>
+        ) : (
           <div className="flex items-center gap-3 p-4 bg-gov-gray-50 border border-dashed border-gov-gray-300 rounded-xl text-gov-gray-500 italic">
             <Clock size={16} />
             <span className="text-sm font-medium">La IA aún no ha terminado de procesar este ticket...</span>
-          </div>
-        ) : (
-          <div className="bg-gov-cyan-100/20 border-l-4 border-gov-cyan-400 p-6 rounded-r-xl">
-             <div className="text-[10px] font-black text-gov-cyan-500 uppercase mb-2">Resumen ejecutivo generado automáticamente</div>
-            <p className="text-sm text-gov-gray-800 leading-relaxed font-semibold">
-              {ticket.resumenIa}
-            </p>
           </div>
         )}
       </div>

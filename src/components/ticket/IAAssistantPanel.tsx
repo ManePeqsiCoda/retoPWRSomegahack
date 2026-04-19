@@ -34,6 +34,8 @@ export default function IAAssistantPanel({
     textoEnStream,
     error,
     tokensUsados,
+    generacionSegundos,
+    ultimaDuracionMs,
     regenerar,
     cancelar,
     sugerenciasRapidas
@@ -58,7 +60,7 @@ export default function IAAssistantPanel({
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-xs font-bold text-white tracking-wide">Asistente IA · GovTech Co-pilot</span>
             <span className="text-[9px] bg-gov-cyan-400/20 text-gov-cyan-300 px-2 py-0.5 rounded-full border border-gov-cyan-400/30 uppercase font-black tracking-tighter">
-              Powered by OpenRouter
+              DuckClaw · PQRSD-Assistant
             </span>
           </div>
         </div>
@@ -83,7 +85,10 @@ export default function IAAssistantPanel({
               <div className="space-y-1">
                 <p className="text-xs font-bold text-gov-gray-900 uppercase">Configuración requerida</p>
                 <p className="text-xs text-gov-gray-700 leading-normal">
-                  Asistente IA no configurado. Asegúrate de añadir <code className="bg-gov-gold-200/50 px-1 rounded text-gov-gold-700">OPENROUTER_API_KEY</code> al archivo .env.local para desbloquear esta función.
+                  Configura <code className="bg-gov-gold-200/50 px-1 rounded text-gov-gold-700">DUCKCLAW_GATEWAY_URL</code> (o{' '}
+                  <code className="bg-gov-gold-200/50 px-1 rounded text-gov-gold-700">NEXT_PUBLIC_API_URL</code>) y{' '}
+                  <code className="bg-gov-gold-200/50 px-1 rounded text-gov-gold-700">NEXT_PUBLIC_IA_HABILITADA=true</code>.
+                  El usuario del CRM debe estar autorizado en el gateway (tenant PQRS). Ver docs/GATEWAY_IA_INTEGRATION.md.
                 </p>
               </div>
             </div>
@@ -153,19 +158,37 @@ export default function IAAssistantPanel({
               {/* 4. ÁREA DE STREAMING */}
               {isGenerating && (
                 <div className="mt-4 animate-in fade-in zoom-in duration-300">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 gap-2">
                     <span className="text-[10px] font-black text-gov-blue-600 uppercase tracking-widest flex items-center gap-2">
                       <span className="flex w-1.5 h-1.5 bg-gov-blue-500 rounded-full animate-ping" />
-                      Procesando con Llama 3...
+                      Generando con PQRSD-Assistant…
                     </span>
-                    <span className="text-[10px] font-mono text-gov-gray-400 uppercase tracking-tighter">
-                      Est: {tokensUsados} tokens
+                    <span className="text-[10px] font-mono text-gov-gray-600 text-right shrink-0">
+                      <span className="text-gov-blue-700 font-bold">{generacionSegundos}s</span>
+                      <span className="text-gov-gray-400 mx-1">·</span>
+                      <span className="text-gov-gray-500">tokens al finalizar</span>
                     </span>
                   </div>
+                  {/* Barra indeterminada: el gateway responde en bloque (sin SSE), no hay progreso real por token */}
+                  <div
+                    className="relative h-2 w-full rounded-full bg-gov-gray-200 overflow-hidden mb-3"
+                    role="progressbar"
+                    aria-label="Generando respuesta"
+                  >
+                    <div className="absolute inset-y-0 left-0 w-[42%] rounded-full crm-ia-progress-indeterminate" />
+                  </div>
                   <div className="bg-gov-blue-50/50 border border-gov-blue-200 rounded-xl p-4 max-h-60 overflow-y-auto shadow-inner bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
-                    <p className="text-sm text-gov-gray-700 leading-relaxed whitespace-pre-wrap font-medium">
-                      {textoEnStream}
-                      <span className="inline-block w-2.5 h-4 bg-gov-blue-700 ml-1 animate-pulse align-middle" />
+                    <p className="text-sm text-gov-gray-700 leading-relaxed whitespace-pre-wrap font-medium min-h-[4rem]">
+                      {textoEnStream ? (
+                        <>
+                          {textoEnStream}
+                          <span className="inline-block w-2.5 h-4 bg-gov-blue-700 ml-1 animate-pulse align-middle" />
+                        </>
+                      ) : (
+                        <span className="text-gov-gray-500 italic">
+                          Conectando con el gateway y el modelo… (sin vista previa hasta completar)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -182,9 +205,15 @@ export default function IAAssistantPanel({
               {!isGenerating && textoEnStream && !error && (
                 <div className="mt-2 bg-sem-green-bg border border-sem-green/20 text-sem-green text-[11px] font-bold px-4 py-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-left duration-500 shadow-sm">
                   <CheckCircle2 size={16} />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-0.5">
                     <span>¡Respuesta generada exitosamente!</span>
                     <span className="font-medium opacity-80">El texto ha sido plasmado en el editor oficial para tu revisión final.</span>
+                    <span className="text-[10px] font-mono font-normal text-sem-green/90">
+                      {tokensUsados > 0 ? `~${tokensUsados.toLocaleString('es-CO')} tokens` : ''}
+                      {typeof ultimaDuracionMs === 'number' && ultimaDuracionMs >= 0
+                        ? `${tokensUsados > 0 ? ' · ' : ''}${(ultimaDuracionMs / 1000).toFixed(1)} s`
+                        : ''}
+                    </span>
                   </div>
                 </div>
               )}
@@ -201,6 +230,18 @@ export default function IAAssistantPanel({
         }
         .animate-cursor-blink {
           animation: blink 1s step-end infinite;
+        }
+        @keyframes crm-ia-indet {
+          0% {
+            transform: translateX(-120%);
+          }
+          100% {
+            transform: translateX(320%);
+          }
+        }
+        .crm-ia-progress-indeterminate {
+          background: linear-gradient(90deg, #1e40af, #38bdf8, #1e40af);
+          animation: crm-ia-indet 1.15s ease-in-out infinite;
         }
       `}</style>
     </div>

@@ -19,6 +19,8 @@ export default function TicketDetailPage() {
     isSubmitting,
     submitSuccess,
     hasUnsavedChanges,
+    resumenCargando,
+    resumenError,
     setRespuestaActual,
     submitRespuesta,
     resetRespuesta,
@@ -62,7 +64,11 @@ export default function TicketDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-8 items-start">
         {/* Columna Izquierda: Información del Ticket */}
         <section className="bg-white rounded-2xl border border-gov-gray-100 shadow-sm p-8">
-          <TicketDetail ticket={ticket} />
+          <TicketDetail
+            ticket={ticket}
+            resumenCargando={resumenCargando}
+            resumenError={resumenError}
+          />
         </section>
 
         {/* Columna Derecha: Editor de Respuesta */}

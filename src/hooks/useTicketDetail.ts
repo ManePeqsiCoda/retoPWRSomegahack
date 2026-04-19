@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useIdSecretariaActivo } from '@/store/authStore';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useIdSecretariaActivo, useAuthStore } from '@/store/authStore';
 import { getTicketById, actualizarRespuesta } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
 import { TicketConUrgencia } from '@/types';
+import { SECRETARIAS_MOCK } from '@/services/mockData';
 
 interface UseTicketDetailReturn {
   ticket: TicketConUrgencia | null;
@@ -12,7 +13,9 @@ interface UseTicketDetailReturn {
   isSubmitting: boolean;
   submitSuccess: boolean;
   hasUnsavedChanges: boolean;
-  
+  resumenCargando: boolean;
+  resumenError: string | null;
+
   setRespuestaActual: (texto: string) => void;
   submitRespuesta: () => Promise<void>;
   resetRespuesta: () => void;
@@ -22,12 +25,17 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
   const [ticket, setTicket] = useState<TicketConUrgencia | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [respuestaActual, setRespuestaActual] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [resumenCargando, setResumenCargando] = useState(false);
+  const [resumenError, setResumenError] = useState<string | null>(null);
 
   const idSecretariaActivo = useIdSecretariaActivo();
+  const usuario = useAuthStore((s) => s.usuario);
+  const iaHabilitada = process.env.NEXT_PUBLIC_IA_HABILITADA === 'true';
+  const resumenFetchGen = useRef(0);
 
   // 1. Carga inicial del ticket
   useEffect(() => {
@@ -64,6 +72,79 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
 
     loadTicket();
   }, [idTicket, idSecretariaActivo]);
+
+  // Resumen ejecutivo GovTech vía gateway (mismo criterio que el panel IA)
+  useEffect(() => {
+    if (!ticket || !iaHabilitada || !usuario) {
+      setResumenCargando(false);
+      setResumenError(null);
+      return;
+    }
+
+    const gen = ++resumenFetchGen.current;
+    const ac = new AbortController();
+
+    setResumenCargando(true);
+    setResumenError(null);
+
+    const secretariaNombre =
+      SECRETARIAS_MOCK.find((s) => s.idSecretaria === ticket.idSecretaria)?.nombre ||
+      'Alcaldía de Medellín';
+
+    (async () => {
+      try {
+        const res = await fetch('/api/ia/resumen-ejecutivo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: ac.signal,
+          body: JSON.stringify({
+            contenidoRaw: ticket.contenidoRaw,
+            tipoSolicitud: ticket.tipoSolicitud,
+            secretariaNombre,
+            idTicket: ticket.idTicket,
+            duckclawUserId: usuario.idUsuario ?? '',
+            duckclawUsername: usuario.nombreCompleto ?? 'Usuario',
+          }),
+        });
+
+        const data = (await res.json()) as { error?: string; detail?: string; text?: string };
+
+        if (gen !== resumenFetchGen.current) return;
+
+        if (!res.ok) {
+          setResumenError(data.detail || data.error || `Error ${res.status}`);
+          return;
+        }
+
+        const t = (data.text ?? '').trim();
+        if (t) {
+          setTicket((curr) => (curr ? { ...curr, resumenIa: t } : null));
+        }
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') return;
+        if (gen !== resumenFetchGen.current) return;
+        setResumenError(e instanceof Error ? e.message : 'Error al generar resumen');
+      } finally {
+        if (gen === resumenFetchGen.current) {
+          setResumenCargando(false);
+        }
+      }
+    })();
+
+    return () => {
+      ac.abort();
+    };
+    // Solo campos fuente del ticket — no incluir `resumenIa` ni el objeto `ticket` completo para no re-disparar al fusionar el resumen del gateway.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ticket/usuario coherentes con esta lista primitiva en cada ejecución
+  }, [
+    ticket?.idTicket,
+    ticket?.contenidoRaw,
+    ticket?.tipoSolicitud,
+    ticket?.idSecretaria,
+    iaHabilitada,
+    usuario?.idUsuario,
+    usuario?.nombreCompleto,
+  ]);
 
   // 2. Acción de enviar respuesta
   const submitRespuesta = async () => {
@@ -125,6 +206,8 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     isSubmitting,
     submitSuccess,
     hasUnsavedChanges,
+    resumenCargando,
+    resumenError,
     setRespuestaActual,
     submitRespuesta,
     resetRespuesta,

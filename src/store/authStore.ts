@@ -4,6 +4,7 @@ import { Usuario } from '@/types';
 import { USUARIOS_MOCK } from '@/services/mockData';
 
 interface AuthState {
+  /** idUsuario y nombreCompleto se reenvían al gateway DuckClaw (tenant PQRS) en el panel IA. */
   usuario: Usuario | null;
   isAuthenticated: boolean;
   isLoading: boolean;
