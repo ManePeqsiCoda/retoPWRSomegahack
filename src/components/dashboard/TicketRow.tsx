@@ -5,6 +5,7 @@ import { TicketConUrgencia, CanalOrigen } from '@/types';
 import { formatearFecha } from '@/lib/utils';
 import { UrgencyBadge } from './';
 import { StatusBadge } from '../shared';
+import RadicadoBadge from '@/components/ticket/RadicadoBadge';
 
 interface TicketRowProps {
   ticket: TicketConUrgencia;
@@ -51,9 +52,10 @@ export default function TicketRow({ ticket, onRowClick }: TicketRowProps) {
       {/* 2. ID / Canal */}
       <td className="py-4 px-3 w-40">
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-gov-gray-500 dark:text-dark-muted font-mono font-medium">
-            {ticket.idTicket}
-          </span>
+          <RadicadoBadge 
+            numeroRadicado={ticket.numeroRadicado} 
+            variant="short" 
+          />
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-gov-gray-500 dark:text-dark-muted/80 uppercase">
             <CanalIcon canal={ticket.canalOrigen} />
             <span>{ticket.canalOrigen}</span>

@@ -4,6 +4,7 @@ import {
   Usuario, 
   Ticket
 } from '@/types';
+import { generarNumeroRadicado } from '@/lib/radicado';
 
 const hoy = new Date();
 
@@ -71,6 +72,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Cordial saludo. Se ha coordinado con la red prestadora de Aranjuez para habilitar un cupo prioritario. Por favor asista el próximo martes a las 10:00 AM.',
     canalOrigen: 'WhatsApp',
     nombreCiudadano: 'Jose Orlando Duque',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 13)),
+    emailCiudadano: 'j.duque@gmail.com',
   },
   {
     idTicket: 'TK-002',
@@ -84,6 +87,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Estimado ciudadano, se ha verificado el stock y se autoriza la entrega inmediata en la farmacia alterna ubicada en el Edificio Comedal.',
     canalOrigen: 'Email',
     nombreCiudadano: 'Claudia Marcela Jaramillo',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 14)),
+    emailCiudadano: 'cmarcela.jaramillo@hotmail.com',
   },
   {
     idTicket: 'TK-003',
@@ -97,6 +102,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Se ha remitido el caso al equipo de auditoría para verificar el cumplimiento del Triage en la Clínica León XIII y agilizar la atención de su familiar.',
     canalOrigen: 'Twitter',
     nombreCiudadano: 'Sebastián Restrepo',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 9)),
+    emailCiudadano: 'srestrepo@outlook.com',
   },
   {
     idTicket: 'TK-004',
@@ -110,6 +117,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Agradecemos su valioso aporte. Actualmente contamos con el portal MEVA donde se publica información epidemiológica que incluiremos en futuras actualizaciones.',
     canalOrigen: 'Web',
     nombreCiudadano: 'Laura Sofía Méndez',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 8)),
+    emailCiudadano: 'laura.mendez@yahoo.com',
   },
   {
     idTicket: 'TK-005',
@@ -123,6 +132,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: null,
     canalOrigen: 'Facebook',
     nombreCiudadano: 'Carlos Mario Vélez',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 3)),
+    emailCiudadano: 'cm.velez@une.net.co',
   },
   {
     idTicket: 'TK-006',
@@ -136,6 +147,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Se procedió a realizar visita de inspección técnica el día de ayer, resultando en el sellamiento temporal del establecimiento por motivos sanitarios.',
     canalOrigen: 'WhatsApp',
     nombreCiudadano: 'Anonimo por seguridad',
+    numeroRadicado: generarNumeroRadicado('sec-salud', subBusinessDays(hoy, 2)),
+    emailCiudadano: 'denuncias.ciudadanas@gmail.com',
   },
 
   // --- OTRAS SECRETARÍAS (9 tickets adicionales para completar 15) ---
@@ -151,6 +164,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: null,
     canalOrigen: 'Twitter',
     nombreCiudadano: 'Ramiro Antonio Sosa',
+    numeroRadicado: generarNumeroRadicado('sec-movilidad', subBusinessDays(hoy, 1)),
+    emailCiudadano: 'ramiro.sosa@gmail.com',
   },
   {
     idTicket: 'TK-008',
@@ -164,6 +179,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Su solicitud ha sido radicada. Por favor realice el pago de los derechos de trámite en la taquilla virtual para proceder con el envío digital.',
     canalOrigen: 'Email',
     nombreCiudadano: 'Marta Nelly Rojas',
+    numeroRadicado: generarNumeroRadicado('sec-educacion', subBusinessDays(hoy, 10)),
+    emailCiudadano: 'marta.rojas@hotmail.com',
   },
   {
     idTicket: 'TK-009',
@@ -177,6 +194,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Se ha agendado una audiencia virtual de impugnación para que presente sus pruebas ante el inspector de tránsito.',
     canalOrigen: 'Web',
     nombreCiudadano: 'Jorge Eliecer Gaitán',
+    numeroRadicado: generarNumeroRadicado('sec-movilidad', subBusinessDays(hoy, 5)),
+    emailCiudadano: null,
   },
   {
     idTicket: 'TK-010',
@@ -190,6 +209,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: null,
     canalOrigen: 'Web',
     nombreCiudadano: 'Valentina Zapata',
+    numeroRadicado: generarNumeroRadicado('sec-cultura', subBusinessDays(hoy, 1)),
+    emailCiudadano: 'valentina.zapata@outlook.com',
   },
   {
     idTicket: 'TK-011',
@@ -203,6 +224,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Excelente iniciativa. Estamos trabajando en el programa "Medellín Valle del Software" que busca precisamente integrar estas competencias.',
     canalOrigen: 'Email',
     nombreCiudadano: 'Federico Londoño',
+    numeroRadicado: generarNumeroRadicado('sec-educacion', subBusinessDays(hoy, 4)),
+    emailCiudadano: null,
   },
   {
     idTicket: 'TK-012',
@@ -216,6 +239,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Se ha generado la alerta a la patrulla de tránsito más cercana para proceder con el comparendo y retiro con grúa.',
     canalOrigen: 'WhatsApp',
     nombreCiudadano: 'Beatriz Eugenia Pino',
+    numeroRadicado: generarNumeroRadicado('sec-movilidad', subBusinessDays(hoy, 0)),
+    emailCiudadano: 'beatriz.pino@gmail.com',
   },
   {
     idTicket: 'TK-013',
@@ -229,6 +254,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Lamentamos los inconvenientes. Se tomarán medidas correctivas en el diseño del layout para las próximas ferias del barrio.',
     canalOrigen: 'Facebook',
     nombreCiudadano: 'Gustavo Adolfo Perez',
+    numeroRadicado: generarNumeroRadicado('sec-desarrollo', subBusinessDays(hoy, 3)),
+    emailCiudadano: null,
   },
   {
     idTicket: 'TK-014',
@@ -242,6 +269,8 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'La solicitud se encuentra en trámite de validación de disponibilidad de fechas. Le contactaremos en máximo 3 días hábiles.',
     canalOrigen: 'Web',
     nombreCiudadano: 'Junta de Acción Comunal',
+    numeroRadicado: generarNumeroRadicado('sec-cultura', subBusinessDays(hoy, 2)),
+    emailCiudadano: null,
   },
   {
     idTicket: 'TK-015',
@@ -255,7 +284,24 @@ export const TICKETS_MOCK: Ticket[] = [
     respuestaSugerida: 'Se ha verificado que hubo un error en su cuenta bancaria registrada. Por favor actualice sus datos en la plataforma para realizar el pago.',
     canalOrigen: 'Email',
     nombreCiudadano: 'Maria Eugenia Rojas',
+    numeroRadicado: generarNumeroRadicado('sec-desarrollo', subBusinessDays(hoy, 7)),
+    emailCiudadano: 'me.rojas@hotmail.com',
   },
 ];
 
 export const DELAY_SIMULADO_MS = 800;
+
+import type { RegistroEmail } from '@/types';
+
+/** Historial de correos enviados (mock de sesión) */
+export let REGISTROS_EMAIL_MOCK: RegistroEmail[] = [];
+
+/** Añade un registro al historial en memoria */
+export function agregarRegistroEmail(registro: RegistroEmail): void {
+  REGISTROS_EMAIL_MOCK = [registro, ...REGISTROS_EMAIL_MOCK];
+}
+
+/** Obtiene el historial de un ticket específico */
+export function getRegistrosEmailByTicket(idTicket: string): RegistroEmail[] {
+  return REGISTROS_EMAIL_MOCK.filter(r => r.idTicket === idTicket);
+}

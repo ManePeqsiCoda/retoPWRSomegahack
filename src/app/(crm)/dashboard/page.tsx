@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import { TicketTable, OverdueBanner } from '@/components/dashboard';
+import NuevoTicketSimulator from '@/components/dashboard/NuevoTicketSimulator';
+
 
 export const metadata: Metadata = {
   title: 'Bandeja de Entrada · CRM PQRSD',
@@ -24,6 +26,11 @@ export default function DashboardPage() {
       
       {/* Componente principal de la tabla (Client Component) */}
       <TicketTable />
+
+      {/* Simulador de Demo (Hackathon) */}
+      <div className="mt-2">
+        <NuevoTicketSimulator />
+      </div>
       
       {/* Aviso institucional inferior */}
       <footer className="pt-8">

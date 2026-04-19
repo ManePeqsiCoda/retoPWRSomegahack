@@ -21,6 +21,13 @@ export default function TicketDetailPage() {
     hasUnsavedChanges,
     resumenCargando,
     resumenError,
+    isConfirmModalOpen,
+    isSendingEmail,
+    emailSendResult,
+    emailError,
+    openConfirmModal,
+    closeConfirmModal,
+    confirmarYEnviar,
     setRespuestaActual,
     submitRespuesta,
     resetRespuesta,
@@ -81,9 +88,16 @@ export default function TicketDetailPage() {
             submitSuccess={submitSuccess}
             hasUnsavedChanges={hasUnsavedChanges}
             error={error} // Pasamos el error si existe para mostrarlo en el banner del editor
+            isConfirmModalOpen={isConfirmModalOpen}
+            isSendingEmail={isSendingEmail}
+            emailSendResult={emailSendResult}
+            emailError={emailError}
             onRespuestaChange={setRespuestaActual}
             onSubmit={submitRespuesta}
             onReset={resetRespuesta}
+            onOpenConfirmModal={openConfirmModal}
+            onCloseConfirmModal={closeConfirmModal}
+            onConfirmarEnvio={confirmarYEnviar}
           />
         </section>
       </div>

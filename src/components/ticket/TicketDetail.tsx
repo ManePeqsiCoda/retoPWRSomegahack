@@ -15,6 +15,8 @@ import { StatusBadge } from '../shared';
 import { UrgencyBadge } from '../dashboard';
 import { cn } from '@/lib/utils';
 import { SECRETARIAS_MOCK } from '@/services/mockData';
+import RadicadoBadge from './RadicadoBadge';
+import EmailStatusTracker from './EmailStatusTracker';
 
 interface TicketDetailProps {
   ticket: TicketConUrgencia;
@@ -54,6 +56,37 @@ export default function TicketDetail({
 
   return (
     <div className="flex flex-col gap-8">
+      {/* ── RADICADO OFICIAL ── */}
+      <div
+        className="rounded-xl p-4 mb-4 flex items-center justify-between gap-4"
+        style={{ background: 'linear-gradient(135deg, #001E4E 0%, #003DA5 100%)' }}
+      >
+        <div className="min-w-0">
+          <p className="text-gov-cyan-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
+            Número de Radicado Oficial · Ley 1755 de 2015
+          </p>
+          <RadicadoBadge
+            numeroRadicado={ticket.numeroRadicado}
+            variant="full"
+            size="lg"
+            copyable={true}
+          />
+        </div>
+
+        <div className="text-right flex-shrink-0">
+          <p className="text-white/50 text-[10px] uppercase tracking-wide">Contacto</p>
+          {ticket.emailCiudadano ? (
+            <p className="text-gov-cyan-400 text-xs font-mono mt-0.5 break-all">
+              {ticket.emailCiudadano}
+            </p>
+          ) : (
+            <p className="text-white/40 text-xs italic mt-0.5">
+              Anónimo · Dec. 1166/2016
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* 1. CABECERA DEL TICKET */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -179,6 +212,12 @@ export default function TicketDetail({
           </div>
         )}
       </div>
+
+      {/* 5. HISTORIAL DE COMUNICACIONES */}
+      <EmailStatusTracker
+        idTicket={ticket.idTicket}
+        numeroRadicado={ticket.numeroRadicado}
+      />
     </div>
   );
 }

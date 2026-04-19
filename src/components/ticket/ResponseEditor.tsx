@@ -10,20 +10,28 @@ import {
   SendHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ticket } from '@/types';
+import { TicketConUrgencia, EmailSendResult, Usuario } from '@/types';
 import { IAAssistantPanel } from './';
-
+import ConfirmModal from '@/components/shared/ConfirmModal';
+import { useAuthStore } from '@/store/authStore';
 interface ResponseEditorProps {
-  ticket: Ticket;
+  ticket: TicketConUrgencia;
   respuestaActual: string;
   respuestaSugerida: string | null;
   isSubmitting: boolean;
   submitSuccess: boolean;
   hasUnsavedChanges: boolean;
   error: string | null;
+  isConfirmModalOpen:  boolean;
+  isSendingEmail:      boolean;
+  emailSendResult:     EmailSendResult | null;
+  emailError:          string | null;
   onRespuestaChange: (texto: string) => void;
   onSubmit: () => void;
   onReset: () => void;
+  onOpenConfirmModal:  () => void;
+  onCloseConfirmModal: () => void;
+  onConfirmarEnvio:    () => void;
 }
 
 export default function ResponseEditor({
@@ -34,10 +42,18 @@ export default function ResponseEditor({
   submitSuccess,
   hasUnsavedChanges,
   error,
+  isConfirmModalOpen,
+  isSendingEmail,
+  emailSendResult,
+  emailError,
   onRespuestaChange,
   onSubmit,
-  onReset
+  onReset,
+  onOpenConfirmModal,
+  onCloseConfirmModal,
+  onConfirmarEnvio
 }: ResponseEditorProps) {
+  const usuario = useAuthStore(s => s.usuario);
   const charCount = respuestaActual.length;
   const isTooShort = charCount < 50;
   const isEmpty = respuestaActual.trim().length === 0;
@@ -45,12 +61,29 @@ export default function ResponseEditor({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEmpty && !isTooShort && !isSubmitting) {
-      onSubmit();
+      onOpenConfirmModal();
     }
   };
 
   return (
     <div className="flex flex-col gap-6 bg-white border border-gov-gray-100 rounded-2xl shadow-sm p-6">
+      {usuario && (
+        <ConfirmModal
+          isOpen={isConfirmModalOpen}
+          onConfirm={onConfirmarEnvio}
+          onCancel={onCloseConfirmModal}
+          isLoading={isSendingEmail}
+          resumen={{
+            destinatario:      ticket.emailCiudadano ?? 'Sin email (solicitud anónima)',
+            numeroRadicado:    ticket.numeroRadicado,
+            nombreCiudadano:   ticket.nombreCiudadano,
+            longitudRespuesta: respuestaActual.length,
+            secretariaNombre:  usuario.secretariaNombre,
+            nombreFuncionario: usuario.nombreCompleto,
+            cargoFuncionario:  usuario.cargo,
+          }}
+        />
+      )}
       {/* 1. CABECERA DEL PANEL */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
@@ -127,19 +160,50 @@ export default function ResponseEditor({
 
       {/* 6. FEEDBACK DE ÉXITO O ERROR */}
       {submitSuccess && (
-        <div className="bg-sem-green-bg border border-sem-green/30 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <CheckCircle2 className="text-sem-green" size={20} />
-          <p className="text-sm font-bold text-sem-green">
-            Respuesta enviada exitosamente. El ticket ha sido actualizado.
-          </p>
+        <div className={cn(
+          "rounded-xl p-4 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300",
+          ticket.emailCiudadano
+            ? 'bg-sem-green-bg border border-sem-green/30'
+            : 'bg-gov-blue-100 border border-gov-blue-300'
+        )}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className={ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-700'} />
+            <span className={cn(
+              "text-sm font-bold",
+              ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-700'
+            )}>
+              {ticket.emailCiudadano ? 'Respuesta enviada exitosamente' : 'Ticket actualizado'}
+            </span>
+          </div>
+
+          {ticket.emailCiudadano && emailSendResult && (
+            <p className="text-xs text-gov-gray-600 pl-6">
+              {emailSendResult.simulado
+                ? '✉️ Email simulado (SMTP_MODE=mock). Revisa la terminal de Next.js para ver el contenido.'
+                : `✉️ Correo enviado a ${ticket.emailCiudadano}. ID: ${emailSendResult.messageId}`
+              }
+            </p>
+          )}
+
+          {emailSendResult?.simulado && (
+            <p className="text-xs text-[#D4A017] pl-6 font-medium">
+              ⚙️ Cambia SMTP_MODE=live en .env.local para envíos reales con Gmail.
+            </p>
+          )}
+
+          {!ticket.emailCiudadano && (
+            <p className="text-xs text-gov-blue-600 pl-6 font-medium">
+              Solicitud anónima — sin notificación por correo (Decreto 1166/2016).
+            </p>
+          )}
         </div>
       )}
 
-      {error && !submitSuccess && (
+      {(error || emailError) && !submitSuccess && (
         <div className="bg-sem-red-bg border border-sem-red/30 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <AlertCircle className="text-sem-red" size={20} />
           <p className="text-sm font-bold text-sem-red">
-            {error}
+            {error || emailError}
           </p>
         </div>
       )}
@@ -167,7 +231,7 @@ export default function ResponseEditor({
           )}
           
           <button
-            onClick={onSubmit}
+            onClick={onOpenConfirmModal}
             disabled={isSubmitting || isTooShort || isEmpty}
             className={cn(
               "flex items-center gap-3 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-lg",

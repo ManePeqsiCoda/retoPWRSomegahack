@@ -56,6 +56,21 @@ export interface Ticket {
   
   /** Nombre del remitente o ciudadano que interpone la solicitud */
   nombreCiudadano: string;
+
+  /**
+   * Número de radicado oficial — Formato: MDE-YYYYMMDD-NNNNNN-COD
+   * Identificador legal principal. Generado en el backend (DuckDB) al ingreso.
+   * En los mocks del frontend lo generamos con la función de radicado.ts
+   * Mapeado desde: numero_radicado (snake_case en FastAPI/DuckDB)
+   */
+  numeroRadicado: string;
+
+  /**
+   * Email del ciudadano para notificaciones SMTP.
+   * null = solicitud anónima (Decreto 1166 de 2016 — es un caso legal válido).
+   * Mapeado desde: email_ciudadano (snake_case en FastAPI/DuckDB)
+   */
+  emailCiudadano: string | null;
 }
 
 
@@ -123,4 +138,61 @@ export interface TicketsFilter {
   tipoSolicitud?: TipoSolicitud | 'Todos';
   nivelUrgencia?: NivelUrgencia | 'Todos';
   searchQuery?: string;
+}
+
+// ─── MÓDULO SMTP ────────────────────────────────────────
+
+export type EstadoEmail = 'pendiente' | 'enviado' | 'fallido' | 'simulado';
+export type TipoEmail   = 'confirmacion_radicado' | 'respuesta_oficial';
+
+/**
+ * Registro de un correo enviado o intentado.
+ * Se almacenará en DuckDB cuando el backend lo soporte.
+ * Por ahora se gestiona en memoria de sesión en el frontend.
+ */
+export interface RegistroEmail {
+  idRegistro:      string;
+  idTicket:        string;
+  numeroRadicado:  string;
+  tipoEmail:       TipoEmail;
+  destinatario:    string;
+  asunto:          string;
+  fechaEnvio:      string;   // ISO 8601
+  estado:          EstadoEmail;
+  errorMensaje?:   string;
+  messageId?:      string;   // ID del servidor SMTP para trazabilidad
+}
+
+/** Payload que el cliente envía a POST /api/email/confirmar */
+export interface ConfirmacionEmailPayload {
+  idTicket:             string;
+  numeroRadicado:       string;
+  emailCiudadano:       string;
+  nombreCiudadano:      string;
+  tipoSolicitud:        TipoSolicitud;   // ya existe en tus tipos
+  secretariaNombre:     string;
+  fechaLimiteRespuesta: string;          // ISO 8601
+}
+
+/** Payload que el cliente envía a POST /api/email/responder */
+export interface RespuestaEmailPayload {
+  idTicket:          string;
+  numeroRadicado:    string;
+  emailCiudadano:    string;
+  nombreCiudadano:   string;
+  tipoSolicitud:     TipoSolicitud;
+  secretariaNombre:  string;
+  nombreFuncionario: string;
+  cargoFuncionario:  string;
+  textoRespuesta:    string;
+  fechaRespuesta:    string;   // ISO 8601
+}
+
+/** Resultado unificado de cualquier operación de envío de email */
+export interface EmailSendResult {
+  success:   boolean;
+  messageId?: string;
+  simulado:  boolean;
+  registro:  RegistroEmail;
+  error?:    string;
 }

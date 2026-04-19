@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIdSecretariaActivo, useAuthStore } from '@/store/authStore';
 import { getTicketById, actualizarRespuesta } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
-import { TicketConUrgencia } from '@/types';
+import { TicketConUrgencia, RespuestaEmailPayload, EmailSendResult } from '@/types';
 import { SECRETARIAS_MOCK } from '@/services/mockData';
+import { useEmailSender } from './useEmailSender';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface UseTicketDetailReturn {
   ticket: TicketConUrgencia | null;
@@ -16,6 +19,13 @@ interface UseTicketDetailReturn {
   resumenCargando: boolean;
   resumenError: string | null;
 
+  isConfirmModalOpen: boolean;
+  isSendingEmail:     boolean;
+  emailSendResult:    EmailSendResult | null;
+  emailError:         string | null;
+  openConfirmModal:   () => void;
+  closeConfirmModal:  () => void;
+  confirmarYEnviar:   () => Promise<void>;
   setRespuestaActual: (texto: string) => void;
   submitRespuesta: () => Promise<void>;
   resetRespuesta: () => void;
@@ -31,6 +41,10 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   const [resumenCargando, setResumenCargando] = useState(false);
   const [resumenError, setResumenError] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [emailSendResult,    setEmailSendResult]    = useState<EmailSendResult | null>(null);
+
+  const { enviarRespuestaOficial, isSendingRespuesta, error: emailErrorRaw } = useEmailSender();
 
   const idSecretariaActivo = useIdSecretariaActivo();
   const usuario = useAuthStore((s) => s.usuario);
@@ -146,47 +160,83 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     usuario?.nombreCompleto,
   ]);
 
-  // 2. Acción de enviar respuesta
   const submitRespuesta = async () => {
-    if (!ticket || !idSecretariaActivo) return;
+    // Esta función ahora simplemente abre el modal si es válido
+    openConfirmModal();
+  };
 
+  const openConfirmModal = useCallback(() => {
+    // Valida antes de abrir el modal
+    if (respuestaActual.trim().length < 50) {
+      setError('La respuesta debe tener al menos 50 caracteres antes de enviar.');
+      return;
+    }
     setError(null);
+    setIsConfirmModalOpen(true);
+  }, [respuestaActual]);
 
-    // Validaciones de negocio
-    const trimmedRespuesta = respuestaActual.trim();
-    if (trimmedRespuesta.length === 0) {
-      setError('La respuesta no puede estar vacía');
-      return;
-    }
+  const closeConfirmModal = useCallback(() => {
+    setIsConfirmModalOpen(false);
+  }, []);
 
-    if (trimmedRespuesta.length < 50) {
-      setError('La respuesta debe tener al menos 50 caracteres para ser válida');
-      return;
-    }
-
+  const confirmarYEnviar = useCallback(async () => {
+    if (!ticket || !idSecretariaActivo) return;
+    
+    setIsConfirmModalOpen(false);
     setIsSubmitting(true);
+    setError(null);
+    setEmailSendResult(null);
+
+    const trimmedRespuesta = respuestaActual.trim();
 
     try {
+      // 1. Guardar localmente (en el mock/DB)
       const response = await actualizarRespuesta(idTicket, trimmedRespuesta, idSecretariaActivo);
-
+      
       if (response.error) {
         setError(response.error);
-      } else {
-        setSubmitSuccess(true);
-        // Resetear estado de cambios guardados (asumiendo que el "original" ahora es lo enviado)
-        // En una app real, actualizaríamos el objeto ticket localmente
-        setTicket(curr => curr ? { ...curr, respuestaSugerida: trimmedRespuesta } : null);
-        
-        setTimeout(() => {
-          setSubmitSuccess(false);
-        }, 3000);
+        setIsSubmitting(false);
+        return;
       }
-    } catch {
-      setError('Error al procesar el envío de la respuesta');
+
+      // Actualizar estado local del ticket
+      setTicket(curr => curr ? { ...curr, respuestaSugerida: trimmedRespuesta, estado: 'Resuelto' } : null);
+
+      // 2. Si el ciudadano es anónimo, no enviamos email
+      if (!ticket.emailCiudadano) {
+        setSubmitSuccess(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3. Construir payload para la API Route
+      const fechaFormateada = format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es });
+      const secretariaNombre = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria)?.nombre || '';
+
+      const payload: RespuestaEmailPayload = {
+        idTicket:          ticket.idTicket,
+        numeroRadicado:    ticket.numeroRadicado,
+        emailCiudadano:    ticket.emailCiudadano,
+        nombreCiudadano:   ticket.nombreCiudadano,
+        tipoSolicitud:     ticket.tipoSolicitud,
+        secretariaNombre:  secretariaNombre,
+        nombreFuncionario: usuario?.nombreCompleto   ?? 'Funcionario',
+        cargoFuncionario:  usuario?.cargo            ?? 'Profesional',
+        textoRespuesta:    trimmedRespuesta,
+        fechaRespuesta:    fechaFormateada,
+      };
+
+      // 4. Enviar
+      const result = await enviarRespuestaOficial(payload);
+      setEmailSendResult(result);
+      setSubmitSuccess(true);
+
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al procesar el envío de la respuesta');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [ticket, idTicket, idSecretariaActivo, respuestaActual, usuario, enviarRespuestaOficial]);
 
   // 3. Resetear cambios
   const resetRespuesta = useCallback(() => {
@@ -208,6 +258,13 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     hasUnsavedChanges,
     resumenCargando,
     resumenError,
+    isConfirmModalOpen,
+    isSendingEmail: isSendingRespuesta,
+    emailSendResult,
+    emailError: emailErrorRaw,
+    openConfirmModal,
+    closeConfirmModal,
+    confirmarYEnviar,
     setRespuestaActual,
     submitRespuesta,
     resetRespuesta,
