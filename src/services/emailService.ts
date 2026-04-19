@@ -87,22 +87,30 @@ class NodemailerTransporter implements IEmailTransporter {
     }
 
     this.from = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER!;
-    console.log(`[EmailService] 🛠️ Inicializando Nodemailer (Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT})`);
+    const isGmail = process.env.SMTP_HOST?.includes('gmail.com');
+    
+    console.log(`[EmailService] 🛠️ Inicializando Nodemailer (${isGmail ? 'Servicio: GMAIL' : `Host: ${process.env.SMTP_HOST}`})`);
 
-    this.transporter = nodemailer.createTransport({
+    const config: any = isGmail ? {
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER!,
+        pass: process.env.SMTP_PASS!,
+      },
+    } : {
       host:   process.env.SMTP_HOST!,
       port:   parseInt(process.env.SMTP_PORT!),
-      secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER!,
         pass: process.env.SMTP_PASS!,
       },
       tls: {
-        // Importante para entornos serverless y Gmail
         rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
       },
-    });
+    };
+
+    this.transporter = nodemailer.createTransport(config);
   }
 
   async send(options: EmailOptions): Promise<EmailSendResult> {
@@ -141,12 +149,19 @@ class NodemailerTransporter implements IEmailTransporter {
         },
       };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error SMTP desconocido';
-      console.error(`[EmailService] ❌ Error → ${msg}`);
+      const errorObj = err as any;
+      const msg = errorObj.message || 'Error SMTP desconocido';
+      const code = errorObj.code || 'N/A';
+      
+      console.error(`[EmailService] ❌ Error SMTP [${code}] → ${msg}`);
+      if (errorObj.response) {
+        console.error(`[EmailService] ❌ Respuesta Servidor: ${errorObj.response}`);
+      }
+
       return {
         success:  false,
         simulado: false,
-        error:    msg,
+        error:    `${msg} (Código: ${code})`,
         registro: {
           idRegistro:    `reg-err-${Date.now()}`,
           idTicket:       options.idTicket       ?? '',

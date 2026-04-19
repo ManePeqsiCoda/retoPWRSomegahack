@@ -84,7 +84,8 @@ export function useEmailSender(): UseEmailSenderReturn {
       const result: EmailSendResult = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Error al enviar la respuesta oficial');
+        setError(result.error || 'Error al enviar la respuesta oficial');
+        return result;
       }
 
       setHistorialSesion((prev) => [result.registro, ...prev]);
@@ -95,7 +96,7 @@ export function useEmailSender(): UseEmailSenderReturn {
         ? 'Sin conexión. Verifica tu conexión a internet.' 
         : (err as Error).message;
       setError(message);
-      return null;
+      return { success: false, error: message };
     } finally {
       setIsSendingRespuesta(false);
     }

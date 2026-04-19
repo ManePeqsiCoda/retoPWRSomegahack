@@ -64,6 +64,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     // Enviar vía el transporter configurado (mock o Gmail)
     const transporter = getEmailTransporter();
+    
+    // Verificación de conexión (ayuda a depurar en Vercel)
+    const isReady = await transporter.verify();
+    if (!isReady && process.env.SMTP_MODE === 'live') {
+      console.error('[POST /api/email/responder] ❌ Transporter no está listo');
+      return NextResponse.json(
+        { error: 'El servidor SMTP no está respondiendo. Verifique credenciales.' },
+        { status: 503 }
+      );
+    }
+
     const result = await transporter.send({
       to:             body.emailCiudadano,
       toName:         body.nombreCiudadano,
