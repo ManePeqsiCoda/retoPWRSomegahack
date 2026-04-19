@@ -57,6 +57,12 @@ export interface Ticket {
   /** Nombre del remitente o ciudadano que interpone la solicitud */
   nombreCiudadano: string;
 
+  /** Documento de identidad del ciudadano (CC, NIT, Pasaporte, etc.) */
+  documentoCiudadano?: string | null;
+
+  /** Teléfono de contacto del ciudadano */
+  telefonoCiudadano?: string | null;
+
   /** Título o asunto de la solicitud (especialmente para Email) */
   asunto?: string;
 

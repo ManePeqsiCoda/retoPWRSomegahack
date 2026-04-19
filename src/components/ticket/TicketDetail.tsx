@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   MessageSquare, 
   Clock, 
@@ -14,6 +15,7 @@ import { formatearFecha } from '@/lib/utils';
 import { StatusBadge } from '../shared';
 import { UrgencyBadge } from '../dashboard';
 import { cn } from '@/lib/utils';
+import { SECRETARIAS_MOCK } from '@/services/mockData';
 import RadicadoBadge from './RadicadoBadge';
 import EmailStatusTracker from './EmailStatusTracker';
 
@@ -51,8 +53,10 @@ export default function TicketDetail({
   resumenCargando = false,
   resumenError = null,
   onCambiarEstado,
+  onActualizarCiudadano,
   isSubmitting = false,
 }: TicketDetailProps) {
+  const secretaria = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria);
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [editNombre, setEditNombre] = useState(ticket.nombreCiudadano);
   const [editEmail, setEditEmail] = useState(ticket.emailCiudadano || '');
