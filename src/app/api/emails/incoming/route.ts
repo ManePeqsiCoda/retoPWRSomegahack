@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generarNumeroRadicado } from '@/lib/radicado';
-import { analyzeAndSelectTemplate } from '@/services/iaTemplateService';
+import { procesarCorreoConIA } from '@/services/iaTemplateService';
 import { sendConfirmationEmail } from '@/services/emailService';
 import { TICKETS_MOCK } from '@/services/mockData';
 import { Ticket } from '@/types';
 
 /**
  * API ENDPOINT: Ingesta de Correos Electrónicos
- * Simula el webhook que recibiría un CRM de un proveedor de email (ej. SendGrid, Mailgun, AWS SES).
+ * Sistema inteligente de decisión IA: Basura -> Datos Faltantes -> Registro Exitoso
  */
 export async function POST(req: NextRequest) {
   try {
@@ -18,62 +18,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan campos obligatorios (remitente, cuerpo)' }, { status: 400 });
     }
 
-    // 1. ASIGNACIÓN DE SECRETARÍA (Simulada para la demo)
-    // En producción, esto se haría basado en el destinatario (ej. salud@medellin.gov.co)
-    const idSecretaria = 'sec-salud'; 
+    // 1. ANÁLISIS INTEGRAL CON IA
+    const analisis = await procesarCorreoConIA(cuerpo, asunto || '', nombre || 'Ciudadano');
 
-    // 2. GENERACIÓN DE RADICADO ÚNICO
-    const numeroRadicado = generarNumeroRadicado(idSecretaria);
+    // ESCENARIO A: BASURA / SPAM
+    if (analisis.esBasura) {
+      console.log(`[IA-Ingesta] 🗑️ Basura detectada. Ignorando.`);
+      return NextResponse.json({ success: false, error: 'Contenido no válido', esBasura: true });
+    }
+
+    // 2. GENERACIÓN DE RESPUESTA Y RADICADO
+    const idSecretaria = 'sec-salud'; // Default para demo
+    const numeroRadicado = analisis.faltanDatos ? 'PENDIENTE-DATOS' : generarNumeroRadicado(idSecretaria);
     const idTicket = `tk-${Date.now()}`;
 
-    // 3. CLASIFICACIÓN POR IA GovTech
-    // Seleccionamos la mejor plantilla basada en el contenido
-    const { plantilla, score, esBasura } = await analyzeAndSelectTemplate(cuerpo, asunto || '');
-    
-    if (esBasura) {
-      console.log(`[IA-Ingesta] 🗑️ Correo detectado como BASURA/SPAM. Ignorando.`);
+    // ESCENARIO B: FALTAN DATOS (Nombre/Cédula)
+    if (analisis.faltanDatos) {
+      console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
+      
+      // Enviamos correo pidiendo los datos (usamos el mismo servicio pero con el texto de la IA)
+      await sendConfirmationEmail(
+        remitente, 
+        'SIN RADICAR', 
+        nombre || 'Ciudadano', 
+        analisis.respuestaGenerada
+      );
+
       return NextResponse.json({ 
-        success: false, 
-        error: 'El contenido no parece ser una solicitud PQRSD válida.',
-        esBasura: true 
+        success: true, 
+        mensaje: 'Se solicitó información adicional al ciudadano',
+        faltanDatos: true,
+        datosFaltantes: analisis.datosFaltantes
       });
     }
 
-    console.log(`[IA-Ingesta] Clasificación completada. Plantilla: ${plantilla?.titulo} (Score: ${score})`);
-
-    // 4. PERSISTENCIA EN DUCKDB (Mock)
+    // ESCENARIO C: TODO CORRECTO -> REGISTRO Y RESPUESTA HUMANA
     const nuevoTicket: Ticket = {
       idTicket,
       numeroRadicado,
       idSecretaria,
       nombreCiudadano: nombre || 'Ciudadano Anónimo',
       emailCiudadano: remitente,
-      tipoSolicitud: plantilla?.categoria ?? 'Peticion', // Asignado por la IA
+      tipoSolicitud: analisis.categoriaSugerida,
       asunto: asunto || 'Sin asunto',
       contenidoRaw: cuerpo,
       resumenIa: null,
-      respuestaSugerida: plantilla?.contenido ?? null, // La IA deja el borrador listo para el humano
+      respuestaSugerida: analisis.respuestaGenerada, // La IA escribe la respuesta humana aquí
       estado: 'Pendiente',
       fechaCreacion: new Date().toISOString(),
-      fechaLimite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 días
+      fechaLimite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
       canalOrigen: 'Email',
     };
 
-    // Guardamos en nuestro mock persistente en memoria (mientras dure la sesión de dev)
     TICKETS_MOCK.unshift(nuevoTicket);
     console.log(`[Database] PQRSD registrado exitosamente: ${numeroRadicado}`);
 
-    // 5. AUTORESPUESTA SMTP (Confirmación al Ciudadano)
-    // Ahora enviamos también el contenido original
-    const emailResult = await sendConfirmationEmail(remitente, numeroRadicado, nombre, cuerpo);
+    // Enviamos la respuesta humana personalizada
+    const emailResult = await sendConfirmationEmail(
+      remitente, 
+      numeroRadicado, 
+      nombre, 
+      analisis.respuestaGenerada
+    );
 
     return NextResponse.json({
       success: true,
       idTicket,
       numeroRadicado,
       ia: {
-        templateSelected: plantilla?.titulo,
-        score
+        templateSelected: 'Generación Dinámica LLM',
+        categoria: analisis.categoriaSugerida
       },
       email: {
         sent: emailResult.success,

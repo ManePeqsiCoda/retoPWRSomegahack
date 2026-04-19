@@ -34,39 +34,88 @@ export const PLANTILLAS_PREESCRITAS: PlantillaRespuesta[] = [
   },
 ];
 
+export interface ResultadoProcesamientoIA {
+  esBasura: boolean;
+  faltanDatos: boolean;
+  datosFaltantes: string[];
+  respuestaGenerada: string;
+  categoriaSugerida: TipoSolicitud;
+}
+
 /**
- * Simula el análisis de IA para seleccionar la mejor plantilla.
- * En producción, esto llamaría a OpenRouter o un modelo local (Llama3/Trinity).
+ * Motor de decisión IA para correos entrantes.
+ * Simula un modelo de lenguaje (LLM) que analiza el contexto completo.
  */
-export async function analyzeAndSelectTemplate(
+export async function procesarCorreoConIA(
   contenidoRaw: string,
-  asunto: string
-): Promise<{ plantilla: PlantillaRespuesta | null; score: number; esBasura: boolean }> {
+  asunto: string,
+  nombreRemitente: string
+): Promise<ResultadoProcesamientoIA> {
   const contentLower = (asunto + " " + contenidoRaw).toLowerCase();
-
-  // 1. DETECCIÓN DE BASURA / SPAM (Simulada)
-  // Si el mensaje es muy corto o contiene solo ruido
-  const esMuyCorto = contenidoRaw.trim().length < 15;
-  const palabrasBasura = ['hola', 'test', 'prueba', 'asdf', '123', 'comprar', 'cripto', 'oferta'];
-  const tienePalabrasBasura = palabrasBasura.some(p => contentLower === p || contentLower.includes('viagra'));
-
-  if (esMuyCorto || tienePalabrasBasura) {
-    return { plantilla: null, score: 1.0, esBasura: true };
-  }
-
-  // 2. CLASIFICACIÓN REAL
-  if (contentLower.includes('hueco') || contentLower.includes('vial') || contentLower.includes('calle')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[0], score: 0.95, esBasura: false };
-  }
   
-  if (contentLower.includes('salud') || contentLower.includes('hospital') || contentLower.includes('cita')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[1], score: 0.92, esBasura: false };
+  // 1. DETECCIÓN DE BASURA (Mejorada)
+  const esBasura = contenidoRaw.length < 15 || 
+                  /comprar|viagra|cripto|oferta única|test prueba/i.test(contentLower);
+  
+  if (esBasura) {
+    return { 
+      esBasura: true, 
+      faltanDatos: false, 
+      datosFaltantes: [], 
+      respuestaGenerada: '', 
+      categoriaSugerida: 'Peticion' 
+    };
   }
 
-  if (contentLower.includes('impuesto') || contentLower.includes('pago') || contentLower.includes('cobro')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[3], score: 0.88, esBasura: false };
+  // 2. EXTRACCIÓN DE DATOS (Simulada con Regex/IA)
+  // Buscamos patrones de números de 7 a 10 dígitos (Cédula en Colombia)
+  const tieneCedula = /\b\d{7,10}\b/.test(contenidoRaw);
+  const tieneNombre = nombreRemitente.split(' ').length >= 2 || contenidoRaw.includes('atentamente');
+  
+  const datosFaltantes = [];
+  if (!tieneCedula) datosFaltantes.push('Número de identificación (Cédula)');
+  if (!tieneNombre) datosFaltantes.push('Nombre completo');
+
+  const faltanDatos = datosFaltantes.length > 0;
+
+  // 3. GENERACIÓN DE RESPUESTA PERSONALIZADA (Simulación de LLM)
+  let respuestaGenerada = "";
+  let categoria: TipoSolicitud = 'Peticion';
+
+  if (contentLower.includes('hueco') || contentLower.includes('calle')) categoria = 'Queja';
+  else if (contentLower.includes('salud') || contentLower.includes('hospital')) categoria = 'Peticion';
+
+  if (faltanDatos) {
+    respuestaGenerada = `
+      Cordial saludo, ciudadano(a). 
+      Hemos recibido su mensaje respecto a "${asunto || 'su solicitud'}", pero para poder radicarlo oficialmente en nuestro sistema de la Alcaldía de Medellín, necesitamos que nos proporcione los siguientes datos:
+      
+      ${datosFaltantes.map(d => `- ${d}`).join('\n')}
+      
+      Una vez nos envíe esta información, procederemos con la generación de su número de radicado.
+      Quedamos atentos para servirle.
+    `;
+  } else {
+    // Respuesta personalizada y humana
+    respuestaGenerada = `
+      Estimado(a) ${nombreRemitente}, espero que este mensaje le encuentre bien.
+      
+      He analizado detenidamente su solicitud respecto a "${asunto || 'su caso'}" y entiendo perfectamente la situación que nos describe sobre "${contenidoRaw.substring(0, 50)}...". 
+      
+      Quiero informarle que su caso ha sido remitido a la dependencia correspondiente para su atención inmediata. Tenga la seguridad de que trabajaremos para darle una solución efectiva. 
+      
+      Le recordamos que, conforme a la Ley 1755 de 2015, el Distrito de Medellín dispone de un plazo máximo de 15 días hábiles para emitir una respuesta de fondo a su solicitud. Estaremos en contacto con usted muy pronto.
+      
+      Atentamente,
+      IA de Atención Ciudadana - Alcaldía de Medellín
+    `;
   }
 
-  // Fallback a información general
-  return { plantilla: PLANTILLAS_PREESCRITAS[2], score: 0.5, esBasura: false };
+  return {
+    esBasura,
+    faltanDatos,
+    datosFaltantes,
+    respuestaGenerada: respuestaGenerada.trim(),
+    categoriaSugerida: categoria
+  };
 }
