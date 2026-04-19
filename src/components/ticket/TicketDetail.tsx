@@ -24,7 +24,7 @@ interface TicketDetailProps {
   resumenCargando?: boolean;
   /** Fallo al generar resumen en vivo; el texto mostrado puede ser el mock. */
   resumenError?: string | null;
-  onCambiarEstado?: (nuevo: any) => void;
+  onCambiarEstado?: (nuevo: TicketEstado) => void;
   isSubmitting?: boolean;
 }
 

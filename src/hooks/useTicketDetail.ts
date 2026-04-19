@@ -29,7 +29,7 @@ interface UseTicketDetailReturn {
   setRespuestaActual: (texto: string) => void;
   submitRespuesta: () => Promise<void>;
   resetRespuesta: () => void;
-  cambiarEstado: (nuevoEstado: any) => Promise<void>;
+  cambiarEstado: (nuevoEstado: TicketEstado) => Promise<void>;
 }
 
 export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
@@ -250,7 +250,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
   // 4. Detección de cambios sin guardar
   const hasUnsavedChanges = respuestaActual !== (ticket?.respuestaSugerida ?? '');
 
-  const cambiarEstado = useCallback(async (nuevoEstado: any) => {
+  const cambiarEstado = useCallback(async (nuevoEstado: TicketEstado) => {
     if (!ticket || !idSecretariaActivo) return;
     setIsSubmitting(true);
     try {

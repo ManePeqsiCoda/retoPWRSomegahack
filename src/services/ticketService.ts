@@ -173,13 +173,6 @@ async function mockActualizarEstado(idTicket: string, nuevoEstado: TicketEstado)
 // FUNCIONES PÚBLICAS — Despachan según DataMode
 // ──────────────────────────────────────────────────
 
-let _currentDataMode: DataMode = 'mock';
-
-/** Configura el modo de datos para las próximas llamadas al servicio. */
-export function setServiceDataMode(mode: DataMode) {
-  _currentDataMode = mode;
-}
-
 export async function getTicketsBySecretaria(
   idSecretaria: string,
   mode: DataMode,
