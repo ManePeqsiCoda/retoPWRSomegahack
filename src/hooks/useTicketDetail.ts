@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIdSecretariaActivo, useAuthStore, useDataMode } from '@/store/authStore';
 import { getTicketById, actualizarRespuesta } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
-import { TicketConUrgencia, RespuestaEmailPayload, EmailSendResult } from '@/types';
+import { TicketConUrgencia, RespuestaEmailPayload, EmailSendResult, TicketEstado } from '@/types';
 import { SECRETARIAS_MOCK } from '@/services/mockData';
 import { useEmailSender } from './useEmailSender';
 import { format } from 'date-fns';

@@ -9,7 +9,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { TicketConUrgencia, CanalOrigen } from '@/types';
+import { TicketConUrgencia, CanalOrigen, TicketEstado } from '@/types';
 import { formatearFecha } from '@/lib/utils';
 import { StatusBadge } from '../shared';
 import { UrgencyBadge } from '../dashboard';
