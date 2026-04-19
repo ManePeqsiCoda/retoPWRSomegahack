@@ -69,8 +69,8 @@ export default function TicketDetail({
     try {
       await onActualizarCiudadano(editNombre, editEmail, editTelefono);
       setIsEditingContact(false);
-    } catch (_e) {
-      alert('Error al actualizar contacto: ' + (_e instanceof Error ? _e.message : 'Desconocido'));
+    } catch {
+      alert('Error al actualizar contacto');
     } finally {
       setIsUpdating(false);
     }

@@ -124,14 +124,14 @@ export async function ensureSchema(): Promise<void> {
       // Intentamos añadirlas; si ya existen, DuckDB fallará y capturamos el error
       await query('ALTER TABLE tickets ADD COLUMN documento_ciudadano VARCHAR');
       console.log('[MotherDuck] ✅ Columna documento_ciudadano añadida');
-    } catch (_e) {
+    } catch {
       // Ignorar si la columna ya existe
     }
 
     try {
       await query('ALTER TABLE tickets ADD COLUMN telefono_ciudadano VARCHAR');
       console.log('[MotherDuck] ✅ Columna telefono_ciudadano añadida');
-    } catch (_e) {
+    } catch {
       // Ignorar si la columna ya existe
     }
 
