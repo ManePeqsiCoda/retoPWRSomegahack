@@ -6,6 +6,7 @@ interface ManualTicketInput {
   idSecretaria?: string;
   nombreCiudadano?: string;
   emailCiudadano?: string;
+  telefono?: string;
   tipoSolicitud?: string;
   asunto?: string;
   contenidoRaw: string;
@@ -33,15 +34,16 @@ export async function POST(req: NextRequest) {
       await query(
         `INSERT INTO tickets (
           id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
-          email_ciudadano, tipo_solicitud, asunto, contenido_raw,
+          email_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
           estado, canal_origen, fecha_creacion, fecha_limite
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
         [
           idTicket,
           numeroRadicado,
           t.idSecretaria || 'sec-salud',
           t.nombreCiudadano || 'Ciudadano Anónimo',
-          t.emailCiudadano || null,
+          t.emailCiudadano?.trim() || null,
+          t.telefono?.trim() || null,
           t.tipoSolicitud || 'Peticion',
           t.asunto || 'Radicación Manual (Físico)',
           t.contenidoRaw,

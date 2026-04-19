@@ -204,8 +204,9 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
       // Actualizar estado local del ticket
       setTicket(curr => curr ? { ...curr, respuestaSugerida: trimmedRespuesta, estado: 'Resuelto' } : null);
 
-      // 2. Si el ciudadano es anónimo, no enviamos email
-      if (!ticket.emailCiudadano) {
+      // 2. Si el ciudadano es anónimo o no tiene email válido, no enviamos email
+      const emailLimpio = ticket.emailCiudadano?.trim();
+      if (!emailLimpio) {
         setSubmitSuccess(true);
         setIsSubmitting(false);
         return;

@@ -74,6 +74,14 @@ export default function RadicacionManualPage() {
   // Enviar todos los tickets al servidor
   const handleSubmitAll = async () => {
     if (tickets.length === 0) return;
+
+    // Validación básica de emails antes de enviar
+    for (const t of tickets) {
+      if (t.emailCiudadano && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.emailCiudadano.trim())) {
+        alert(`El email "${t.emailCiudadano}" no tiene un formato válido.`);
+        return;
+      }
+    }
     
     setIsSubmitting(true);
     try {

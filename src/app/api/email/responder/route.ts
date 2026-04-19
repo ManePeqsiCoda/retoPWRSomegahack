@@ -38,7 +38,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Validar formato de email
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.emailCiudadano)) {
+    const emailCiudadano = body.emailCiudadano.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCiudadano)) {
       return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 });
     }
 
