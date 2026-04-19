@@ -49,13 +49,19 @@ export interface ResultadoProcesamientoIA {
 export async function procesarCorreoConIA(
   contenidoRaw: string,
   asunto: string,
-  nombreRemitente: string
+  nombreRemitente: string,
+  contextoAnterior?: { asunto: string, cuerpoOriginal: string }
 ): Promise<ResultadoProcesamientoIA> {
-  const contentLower = (asunto + " " + contenidoRaw).toLowerCase();
+  // Fusionar contexto si existe (Continuidad)
+  const textoParaAnalizar = contextoAnterior 
+    ? `HISTORIAL: ${contextoAnterior.asunto} - ${contextoAnterior.cuerpoOriginal}\nNUEVO MENSAJE: ${contenidoRaw}`
+    : contenidoRaw;
+
+  const contentLower = (asunto + " " + textoParaAnalizar).toLowerCase();
   
-  // 1. DETECCIÓN DE BASURA (Mejorada)
-  const esBasura = contenidoRaw.length < 15 || 
-                  /comprar|viagra|cripto|oferta única|test prueba/i.test(contentLower);
+  // 1. DETECCIÓN DE BASURA
+  const esBasura = !contextoAnterior && (contenidoRaw.length < 15 || 
+                  /comprar|viagra|cripto|oferta única|test prueba/i.test(contentLower));
   
   if (esBasura) {
     return { 
@@ -67,10 +73,9 @@ export async function procesarCorreoConIA(
     };
   }
 
-  // 2. EXTRACCIÓN DE DATOS (Simulada con Regex/IA)
-  // Buscamos patrones de números de 7 a 10 dígitos (Cédula en Colombia)
-  const tieneCedula = /\b\d{7,10}\b/.test(contenidoRaw);
-  const tieneNombre = nombreRemitente.split(' ').length >= 2 || contenidoRaw.includes('atentamente');
+  // 2. EXTRACCIÓN DE DATOS
+  const tieneCedula = /\b\d{7,10}\b/.test(textoParaAnalizar);
+  const tieneNombre = nombreRemitente.split(' ').length >= 2 || textoParaAnalizar.includes('atentamente');
   
   const datosFaltantes = [];
   if (!tieneCedula) datosFaltantes.push('Número de identificación (Cédula)');
@@ -78,7 +83,7 @@ export async function procesarCorreoConIA(
 
   const faltanDatos = datosFaltantes.length > 0;
 
-  // 3. GENERACIÓN DE RESPUESTA PERSONALIZADA (Simulación de LLM)
+  // 3. GENERACIÓN DE RESPUESTA
   let respuestaGenerada = "";
   let categoria: TipoSolicitud = 'Peticion';
 
@@ -88,23 +93,24 @@ export async function procesarCorreoConIA(
   if (faltanDatos) {
     respuestaGenerada = `
       Cordial saludo, ciudadano(a). 
-      Hemos recibido su mensaje respecto a "${asunto || 'su solicitud'}", pero para poder radicarlo oficialmente en nuestro sistema de la Alcaldía de Medellín, necesitamos que nos proporcione los siguientes datos:
+      Hemos recibido su mensaje respecto a "${asunto || (contextoAnterior?.asunto) || 'su solicitud'}", pero para poder radicarlo oficialmente, aún necesitamos:
       
       ${datosFaltantes.map(d => `- ${d}`).join('\n')}
       
-      Una vez nos envíe esta información, procederemos con la generación de su número de radicado.
-      Quedamos atentos para servirle.
+      Por favor, proporciónenos estos datos respondiendo a este correo.
     `;
   } else {
-    // Respuesta personalizada y humana
+    // Si venimos de un contexto anterior, la respuesta debe ser de agradecimiento por completar los datos
+    const intro = contextoAnterior 
+      ? `Gracias por completar su información, ${nombreRemitente}.`
+      : `Estimado(a) ${nombreRemitente}, espero que este mensaje le encuentre bien.`;
+
     respuestaGenerada = `
-      Estimado(a) ${nombreRemitente}, espero que este mensaje le encuentre bien.
+      ${intro}
       
-      He analizado detenidamente su solicitud respecto a "${asunto || 'su caso'}" y entiendo perfectamente la situación que nos describe sobre "${contenidoRaw.substring(0, 50)}...". 
+      He procesado su solicitud sobre "${asunto || (contextoAnterior?.asunto) || 'su caso'}". Su radicación se ha completado exitosamente tras validar su identidad.
       
-      Quiero informarle que su caso ha sido remitido a la dependencia correspondiente para su atención inmediata. Tenga la seguridad de que trabajaremos para darle una solución efectiva. 
-      
-      Le recordamos que, conforme a la Ley 1755 de 2015, el Distrito de Medellín dispone de un plazo máximo de 15 días hábiles para emitir una respuesta de fondo a su solicitud. Estaremos en contacto con usted muy pronto.
+      Le recordamos que, conforme a la Ley 1755 de 2015, el Distrito de Medellín dispone de un plazo máximo de 15 días hábiles para emitir una respuesta de fondo.
       
       Atentamente,
       IA de Atención Ciudadana - Alcaldía de Medellín

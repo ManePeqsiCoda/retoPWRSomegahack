@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generarNumeroRadicado } from '@/lib/radicado';
 import { procesarCorreoConIA } from '@/services/iaTemplateService';
 import { sendConfirmationEmail } from '@/services/emailService';
-import { TICKETS_MOCK } from '@/services/mockData';
+import { TICKETS_MOCK, MEMORIA_HILOS_MOCK } from '@/services/mockData';
 import { Ticket } from '@/types';
 
 /**
  * API ENDPOINT: Ingesta de Correos Electrónicos
- * Sistema inteligente de decisión IA: Basura -> Datos Faltantes -> Registro Exitoso
+ * Sistema con Memoria de Continuidad: Detecta si es una respuesta a una solicitud anterior.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -15,44 +15,62 @@ export async function POST(req: NextRequest) {
     const { remitente, nombre, asunto, cuerpo } = body;
 
     if (!remitente || !cuerpo) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios (remitente, cuerpo)' }, { status: 400 });
+      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // 1. ANÁLISIS INTEGRAL CON IA
-    const analisis = await procesarCorreoConIA(cuerpo, asunto || '', nombre || 'Ciudadano');
+    // 1. BUSCAR CONTINUIDAD (¿El ciudadano está respondiendo a una petición de datos anterior?)
+    const contextoAnterior = MEMORIA_HILOS_MOCK[remitente];
+    if (contextoAnterior) {
+      console.log(`[IA-Continuidad] 🧵 Detectado hilo anterior para: ${remitente}`);
+    }
 
-    // ESCENARIO A: BASURA / SPAM
+    // 2. ANÁLISIS CON IA (Enviando contexto si existe)
+    const analisis = await procesarCorreoConIA(
+      cuerpo, 
+      asunto || '', 
+      nombre || 'Ciudadano', 
+      contextoAnterior
+    );
+
+    // ESCENARIO A: BASURA
     if (analisis.esBasura) {
-      console.log(`[IA-Ingesta] 🗑️ Basura detectada. Ignorando.`);
       return NextResponse.json({ success: false, error: 'Contenido no válido', esBasura: true });
     }
 
-    // 2. GENERACIÓN DE RESPUESTA Y RADICADO
-    const idSecretaria = 'sec-salud'; // Default para demo
-    const numeroRadicado = analisis.faltanDatos ? 'PENDIENTE-DATOS' : generarNumeroRadicado(idSecretaria);
-    const idTicket = `tk-${Date.now()}`;
-
-    // ESCENARIO B: FALTAN DATOS (Nombre/Cédula)
+    // ESCENARIO B: SIGUEN FALTANDO DATOS
     if (analisis.faltanDatos) {
-      console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
-      
-      // Enviamos correo pidiendo los datos (usamos el mismo servicio pero con el texto de la IA)
+      // Guardamos (o actualizamos) en la memoria para el próximo correo
+      MEMORIA_HILOS_MOCK[remitente] = {
+        asunto: asunto || contextoAnterior?.asunto || 'Solicitud Pendiente',
+        cuerpoOriginal: contextoAnterior ? `${contextoAnterior.cuerpoOriginal}\n${cuerpo}` : cuerpo,
+        fecha: new Date()
+      };
+
       await sendConfirmationEmail(
         remitente, 
-        'SIN RADICAR', 
+        'EN TRÁMITE', 
         nombre || 'Ciudadano', 
         analisis.respuestaGenerada
       );
 
       return NextResponse.json({ 
         success: true, 
-        mensaje: 'Se solicitó información adicional al ciudadano',
-        faltanDatos: true,
-        datosFaltantes: analisis.datosFaltantes
+        mensaje: 'Continuidad mantenida: Se solicitan datos restantes',
+        faltanDatos: true 
       });
     }
 
-    // ESCENARIO C: TODO CORRECTO -> REGISTRO Y RESPUESTA HUMANA
+    // ESCENARIO C: ÉXITO (Datos completos)
+    // 1. Generar radicado real
+    const idSecretaria = 'sec-salud';
+    const numeroRadicado = generarNumeroRadicado(idSecretaria);
+    const idTicket = `tk-${Date.now()}`;
+
+    // 2. Crear ticket con el contenido fusionado (Historial + Nuevo)
+    const contenidoFinal = contextoAnterior 
+      ? `--- SOLICITUD INICIAL ---\n${contextoAnterior.cuerpoOriginal}\n\n--- DATOS COMPLETADOS ---\n${cuerpo}`
+      : cuerpo;
+
     const nuevoTicket: Ticket = {
       idTicket,
       numeroRadicado,
@@ -60,10 +78,10 @@ export async function POST(req: NextRequest) {
       nombreCiudadano: nombre || 'Ciudadano Anónimo',
       emailCiudadano: remitente,
       tipoSolicitud: analisis.categoriaSugerida,
-      asunto: asunto || 'Sin asunto',
-      contenidoRaw: cuerpo,
+      asunto: asunto || contextoAnterior?.asunto || 'Sin asunto',
+      contenidoRaw: contenidoFinal,
       resumenIa: null,
-      respuestaSugerida: analisis.respuestaGenerada, // La IA escribe la respuesta humana aquí
+      respuestaSugerida: analisis.respuestaGenerada,
       estado: 'Pendiente',
       fechaCreacion: new Date().toISOString(),
       fechaLimite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
@@ -71,29 +89,21 @@ export async function POST(req: NextRequest) {
     };
 
     TICKETS_MOCK.unshift(nuevoTicket);
-    console.log(`[Database] PQRSD registrado exitosamente: ${numeroRadicado}`);
+    
+    // 3. LIMPIAR MEMORIA (La conversación ha concluido con un radicado)
+    delete MEMORIA_HILOS_MOCK[remitente];
+    console.log(`[IA-Continuidad] ✅ Hilo cerrado y ticket creado: ${numeroRadicado}`);
 
-    // Enviamos la respuesta humana personalizada
-    const emailResult = await sendConfirmationEmail(
-      remitente, 
-      numeroRadicado, 
-      nombre, 
-      analisis.respuestaGenerada
-    );
+    // 4. Enviar respuesta humana final
+    await sendConfirmationEmail(remitente, numeroRadicado, nombre, analisis.respuestaGenerada);
 
-    return NextResponse.json({
-      success: true,
-      idTicket,
-      numeroRadicado,
-      ia: {
-        templateSelected: 'Generación Dinámica LLM',
-        categoria: analisis.categoriaSugerida
-      },
-      email: {
-        sent: emailResult.success,
-        messageId: emailResult.messageId
-      }
-    });
+    return NextResponse.json({ success: true, numeroRadicado });
+
+  } catch (error) {
+    console.error('[Ingesta-Error]', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
 
   } catch (error) {
     console.error('[Ingesta-Error]', error);
