@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { Sidebar, Topbar } from '@/components/layout';
 import { Loader2 } from 'lucide-react';
-import { useDataModeSync } from '@/hooks/useDataModeSync';
 
 /**
  * CRM Layout Master
@@ -21,9 +20,6 @@ export default function CRMLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-
-  // Sincroniza el modo de datos (mock vs live) con el servicio de tickets
-  useDataModeSync();
 
   // 1. Protección de Rutas (Frontend Guard)
   useEffect(() => {

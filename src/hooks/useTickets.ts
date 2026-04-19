@@ -63,7 +63,7 @@ export function useTickets(): UseTicketsReturn {
 
         // 3. Ordenar: Críticos primero, luego por días restantes ASC
         const sortedTickets = filteredByUrgencia.sort((a, b) => {
-          const priority = { critico: 1, atencion: 2, seguro: 3 };
+          const priority: Record<string, number> = { critico: 1, atencion: 2, seguro: 3 };
           
           if (priority[a.nivelUrgencia] !== priority[b.nivelUrgencia]) {
             return priority[a.nivelUrgencia] - priority[b.nivelUrgencia];

@@ -26,6 +26,7 @@ import { formatearFecha, truncarTexto } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { GripVertical, MessageCircle } from 'lucide-react';
 import { actualizarEstadoTicket } from '@/services/ticketService';
+import { useDataMode } from '@/store/authStore';
 
 const COLUMNAS: { id: TicketEstado; label: string; color: string }[] = [
   { id: 'Pendiente', label: 'Pendiente', color: 'border-t-gov-blue-500' },
@@ -243,6 +244,8 @@ export default function KanbanBoard() {
     });
   }
 
+  const dataMode = useDataMode();
+
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
@@ -262,7 +265,7 @@ export default function KanbanBoard() {
 
     if (finalState) {
       try {
-        await actualizarEstadoTicket(idTicket, finalState);
+        await actualizarEstadoTicket(idTicket, finalState, dataMode);
         refetch(); // Sincronizar con el store global
       } catch (err) {
         console.error("Error al persistir cambio de estado:", err);
