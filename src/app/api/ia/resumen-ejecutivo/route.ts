@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  crmGatewayUserId,
-  gatewayBaseUrl,
-  postPqrsAssistantChat,
-  responseTextFromGatewayPayload,
-} from '@/lib/duckclaw-gateway';
 
 interface ResumenEjecutivoBody {
   contenidoRaw: string;
@@ -24,7 +18,7 @@ function stripExecutiveSummaryNoise(raw: string): string {
   return t.trim();
 }
 
-function buildResumenEjecutivoMessage(body: ResumenEjecutivoBody): string {
+function buildResumenPrompt(body: ResumenEjecutivoBody): string {
   return [
     '[Modo: resumen ejecutivo CRM GovTech para funcionario público — solo lectura]',
     'Produce un resumen ejecutivo en español (Colombia), 2 a 4 oraciones como máximo.',
@@ -44,85 +38,104 @@ function buildResumenEjecutivoMessage(body: ResumenEjecutivoBody): string {
   ].join('\n');
 }
 
-/**
- * Proxy: resumen ejecutivo para el panel "Análisis de IA GovTech" vía PQRSD-Assistant.
- */
+/** Fallback directo a OpenRouter cuando el gateway no está disponible */
+async function callOpenRouterDirect(prompt: string): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const model = process.env.NEXT_PUBLIC_OPENROUTER_MODEL || 'arcee-ai/trinity-large-preview:free';
+
+  if (!apiKey) {
+    throw new Error('OPENROUTER_API_KEY no configurada');
+  }
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      'X-Title': 'CRM PQRSD Medellín',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: 'Eres un asistente de la Alcaldía de Medellín especializado en PQRSD. Responde siempre en español colombiano.' },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 500,
+      temperature: 0.3,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenRouter ${res.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
+
+/** Intenta gateway DuckClaw; si falla, usa OpenRouter directo */
+async function tryGateway(body: ResumenEjecutivoBody): Promise<{ text: string; source: string }> {
+  // Intentar el gateway primero (solo si hay URL configurada)
+  const gatewayUrl = (
+    process.env.DUCKCLAW_GATEWAY_URL?.trim() ||
+    process.env.NEXT_PUBLIC_API_URL?.trim() ||
+    ''
+  ).replace(/\/$/, '');
+
+  if (gatewayUrl) {
+    try {
+      const { postPqrsAssistantChat, crmGatewayUserId, responseTextFromGatewayPayload } = await import('@/lib/duckclaw-gateway');
+
+      const chatRequest = {
+        message: buildResumenPrompt(body),
+        chat_id: `crm-resumen-${body.idTicket}`,
+        user_id: crmGatewayUserId(body.duckclawUserId ?? ''),
+        username: (body.duckclawUsername || 'Usuario').trim() || 'Usuario',
+        chat_type: 'private',
+        tenant_id: 'PQRS',
+        stream: false,
+      };
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+      const { ok, payload } = await postPqrsAssistantChat(gatewayUrl, chatRequest);
+      clearTimeout(timeout);
+
+      if (ok) {
+        const text = responseTextFromGatewayPayload(payload);
+        if (text.trim()) {
+          return { text: stripExecutiveSummaryNoise(text), source: 'gateway' };
+        }
+      }
+    } catch (e) {
+      console.warn('[RESUMEN] Gateway no disponible, usando OpenRouter directo:', e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Fallback: OpenRouter directo
+  const prompt = buildResumenPrompt(body);
+  const text = await callOpenRouterDirect(prompt);
+  return { text: stripExecutiveSummaryNoise(text), source: 'openrouter' };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const base = gatewayBaseUrl();
-    if (!base) {
-      return NextResponse.json(
-        { error: 'DUCKCLAW_GATEWAY_URL o NEXT_PUBLIC_API_URL no configurada' },
-        { status: 500 }
-      );
-    }
-
     const body = (await request.json()) as ResumenEjecutivoBody;
 
     if (!body.contenidoRaw?.trim() || !body.secretariaNombre?.trim()) {
       return NextResponse.json({ error: 'Faltan contenido o secretaría' }, { status: 400 });
     }
 
-    const idTicket = (body.idTicket || 'ticket-unknown').trim();
-    const uid = crmGatewayUserId(body.duckclawUserId ?? '');
-    const username = (body.duckclawUsername || 'Usuario').trim() || 'Usuario';
+    const { text, source } = await tryGateway(body);
 
-    const chatRequest = {
-      message: buildResumenEjecutivoMessage(body),
-      chat_id: `crm-resumen-${idTicket}`,
-      user_id: uid,
-      username,
-      chat_type: 'private',
-      tenant_id: 'PQRS',
-      stream: false,
-    };
-
-    const { ok, status, rawText, payload } = await postPqrsAssistantChat(base, chatRequest);
-
-    if (!ok) {
-      const detail =
-        (typeof payload.detail === 'string' && payload.detail) ||
-        (typeof payload.message === 'string' && payload.message) ||
-        rawText.slice(0, 400);
-      return NextResponse.json(
-        { error: `Gateway ${status}`, detail },
-        { status: status >= 400 && status < 600 ? status : 502 }
-      );
+    if (!text.trim()) {
+      return NextResponse.json({ error: 'No se obtuvo texto del modelo' }, { status: 502 });
     }
 
-    if (rawText.trim() && Object.keys(payload).length === 0) {
-      return NextResponse.json(
-        { error: 'Respuesta inválida del gateway', detail: rawText.slice(0, 500) },
-        { status: 502 }
-      );
-    }
-
-    const responseText = responseTextFromGatewayPayload(payload);
-
-    if (!responseText.trim()) {
-      return NextResponse.json(
-        { error: 'El gateway no devolvió texto en `response`', detail: payload },
-        { status: 502 }
-      );
-    }
-
-    const text = stripExecutiveSummaryNoise(responseText);
-    const elapsedMs =
-      typeof payload.elapsed_ms === 'number' ? payload.elapsed_ms : undefined;
-    const usageTokens = payload.usage_tokens;
-    const usageOk =
-      usageTokens &&
-      typeof usageTokens === 'object' &&
-      usageTokens !== null &&
-      typeof (usageTokens as { total_tokens?: unknown }).total_tokens === 'number'
-        ? (usageTokens as { total_tokens: number; input_tokens?: number; output_tokens?: number })
-        : undefined;
-
-    return NextResponse.json({
-      text: text || responseText.trim(),
-      ...(elapsedMs !== undefined ? { elapsed_ms: elapsedMs } : {}),
-      ...(usageOk ? { usage_tokens: usageOk } : {}),
-    });
+    return NextResponse.json({ text, source });
   } catch (err: unknown) {
     console.error('[IA_RESUMEN_EJECUTIVO]:', err);
     const message = err instanceof Error ? err.message : 'Error desconocido';

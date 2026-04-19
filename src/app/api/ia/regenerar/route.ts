@@ -1,10 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  crmGatewayUserId,
-  gatewayBaseUrl,
-  postPqrsAssistantChat,
-  responseTextFromGatewayPayload,
-} from '@/lib/duckclaw-gateway';
 
 interface RegenerarRequestBody {
   contenidoRaw: string;
@@ -14,15 +8,10 @@ interface RegenerarRequestBody {
   secretariaNombre: string;
   tipoSolicitud: string;
   idTicket: string;
-  /** Desde Zustand — debe existir en whitelist del gateway (tenant PQRS) */
   duckclawUserId: string;
   duckclawUsername: string;
 }
 
-/**
- * Deja solo el texto apto para pegar en el oficio: sin prefacio del modelo ni secciones meta al final.
- * Quita líneas de título tipo "RESPUESTA OFICIAL - SECRETARÍA …" y metadatos de radicado previos al saludo.
- */
 function extractCrmOfficialPqrsText(raw: string): string {
   let t = (raw || '').trim();
   if (!t) return t;
@@ -31,9 +20,7 @@ function extractCrmOfficialPqrsText(raw: string): string {
   if (startM && typeof startM.index === 'number') {
     t = t.slice(startM.index);
   }
-  // Quitar la línea completa "RESPUESTA OFICIAL …" (con o sin guiones / dependencia)
   t = t.replace(/^\s*RESPUESTA OFICIAL[^\n]*\n+/i, '');
-  // Bloques opcionales de metadatos antes del saludo institucional
   t = t.replace(
     /^(?:Radicado\s*:[^\n]*\n+|Fecha\s*:[^\n]*\n+|Asunto\s*:[^\n]*\n+)+/i,
     ''
@@ -76,87 +63,101 @@ function buildCrmUserMessage(body: RegenerarRequestBody): string {
     .join('\n');
 }
 
-/**
- * Proxy hacia DuckClaw `POST /api/v1/agent/PQRSD-Assistant/chat`.
- * Sustituye el flujo OpenRouter; la respuesta se devuelve como JSON `{ text }` para el hook.
- */
+/** Llamada directa a OpenRouter cuando el gateway no está disponible */
+async function callOpenRouterDirect(prompt: string): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const model = process.env.NEXT_PUBLIC_OPENROUTER_MODEL || 'arcee-ai/trinity-large-preview:free';
+
+  if (!apiKey) {
+    throw new Error('OPENROUTER_API_KEY no configurada');
+  }
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      'X-Title': 'CRM PQRSD Medellín',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: 'Eres un asistente de la Alcaldía de Medellín especializado en PQRSD. Redacta respuestas oficiales en español colombiano con tono institucional.' },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 1500,
+      temperature: 0.4,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`OpenRouter ${res.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content?.trim() || '';
+}
+
+/** Intenta gateway DuckClaw; si falla, usa OpenRouter directo */
+async function tryGateway(body: RegenerarRequestBody): Promise<{ text: string; source: string }> {
+  const gatewayUrl = (
+    process.env.DUCKCLAW_GATEWAY_URL?.trim() ||
+    process.env.NEXT_PUBLIC_API_URL?.trim() ||
+    ''
+  ).replace(/\/$/, '');
+
+  if (gatewayUrl) {
+    try {
+      const { postPqrsAssistantChat, crmGatewayUserId, responseTextFromGatewayPayload } = await import('@/lib/duckclaw-gateway');
+
+      const chatRequest = {
+        message: buildCrmUserMessage(body),
+        chat_id: `crm-ticket-${body.idTicket}`,
+        user_id: crmGatewayUserId(body.duckclawUserId ?? ''),
+        username: (body.duckclawUsername || 'Usuario').trim() || 'Usuario',
+        chat_type: 'private',
+        tenant_id: 'PQRS',
+        stream: false,
+      };
+
+      const { ok, payload } = await postPqrsAssistantChat(gatewayUrl, chatRequest);
+
+      if (ok) {
+        const text = responseTextFromGatewayPayload(payload);
+        if (text.trim()) {
+          return { text: extractCrmOfficialPqrsText(text), source: 'gateway' };
+        }
+      }
+    } catch (e) {
+      console.warn('[REGENERAR] Gateway no disponible, usando OpenRouter directo:', e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Fallback: OpenRouter directo
+  const prompt = buildCrmUserMessage(body);
+  const text = await callOpenRouterDirect(prompt);
+  return { text: extractCrmOfficialPqrsText(text), source: 'openrouter' };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const base = gatewayBaseUrl();
-    if (!base) {
-      return NextResponse.json(
-        { error: 'DUCKCLAW_GATEWAY_URL o NEXT_PUBLIC_API_URL no configurada' },
-        { status: 500 }
-      );
-    }
-
     const body = (await request.json()) as RegenerarRequestBody;
 
     if (!body.contenidoRaw || !body.instruccionFuncionario || !body.secretariaNombre) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
-    const idTicket = (body.idTicket || 'ticket-unknown').trim();
-    const uid = crmGatewayUserId(body.duckclawUserId ?? '');
-    const username = (body.duckclawUsername || 'Usuario').trim() || 'Usuario';
+    const { text, source } = await tryGateway(body);
 
-    const chatRequest = {
-      message: buildCrmUserMessage(body),
-      chat_id: `crm-ticket-${idTicket}`,
-      user_id: uid,
-      username,
-      chat_type: 'private',
-      tenant_id: 'PQRS',
-      stream: false,
-    };
-
-    const { ok, status, rawText, payload } = await postPqrsAssistantChat(base, chatRequest);
-
-    if (!ok) {
-      const detail =
-        (typeof payload.detail === 'string' && payload.detail) ||
-        (typeof payload.message === 'string' && payload.message) ||
-        rawText.slice(0, 400);
-      return NextResponse.json(
-        { error: `Gateway ${status}`, detail },
-        { status: status >= 400 && status < 600 ? status : 502 }
-      );
+    if (!text.trim()) {
+      return NextResponse.json({ error: 'Respuesta vacía del modelo' }, { status: 502 });
     }
 
-    if (rawText.trim() && Object.keys(payload).length === 0) {
-      return NextResponse.json(
-        { error: 'Respuesta inválida del gateway', detail: rawText.slice(0, 500) },
-        { status: 502 }
-      );
-    }
-
-    const responseText = responseTextFromGatewayPayload(payload);
-
-    if (!responseText.trim()) {
-      return NextResponse.json(
-        { error: 'El gateway no devolvió texto en `response`', detail: payload },
-        { status: 502 }
-      );
-    }
-
-    const text = extractCrmOfficialPqrsText(responseText);
-    const elapsedMs =
-      typeof payload.elapsed_ms === 'number' ? payload.elapsed_ms : undefined;
-    const usageTokens = payload.usage_tokens;
-    const usageOk =
-      usageTokens &&
-      typeof usageTokens === 'object' &&
-      usageTokens !== null &&
-      typeof (usageTokens as { total_tokens?: unknown }).total_tokens === 'number'
-        ? (usageTokens as { total_tokens: number; input_tokens?: number; output_tokens?: number })
-        : undefined;
-    return NextResponse.json({
-      text: text || responseText.trim(),
-      ...(elapsedMs !== undefined ? { elapsed_ms: elapsedMs } : {}),
-      ...(usageOk ? { usage_tokens: usageOk } : {}),
-    });
+    return NextResponse.json({ text, source });
   } catch (err: unknown) {
-    console.error('[IA_REGENERAR_DUCKCLAW]:', err);
+    console.error('[IA_REGENERAR]:', err);
     const message = err instanceof Error ? err.message : 'Error desconocido';
     return NextResponse.json({ error: 'Error del servidor', detail: message }, { status: 500 });
   }

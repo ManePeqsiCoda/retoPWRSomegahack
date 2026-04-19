@@ -37,8 +37,8 @@ const CanalEntry = ({ canal }: { canal: CanalOrigen }) => {
   };
   const Icon = icons[canal] || Info;
   return (
-    <div className="flex items-center gap-1.5 text-xs text-gov-gray-500 font-medium">
-      <Icon size={14} className="text-gov-gray-400" />
+    <div className="flex items-center gap-1.5 text-xs text-gov-gray-500 dark:text-dark-muted font-medium">
+      <Icon size={14} className="text-gov-gray-400 dark:text-dark-muted" />
       <span>Recibido vía {canal}</span>
     </div>
   );
@@ -98,11 +98,11 @@ export default function TicketDetail({
         </div>
         
         <div>
-          <h1 className="text-2xl font-bold text-gov-gray-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-gov-gray-900 dark:text-dark-text tracking-tight">
             {ticket.nombreCiudadano}
           </h1>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-sm font-semibold text-gov-blue-700 bg-gov-blue-100/50 px-2 py-0.5 rounded">
+            <span className="text-sm font-semibold text-gov-blue-700 dark:text-dark-cyan bg-gov-blue-100/50 dark:bg-dark-accent/20 px-2 py-0.5 rounded">
               {ticket.tipoSolicitud}
             </span>
             <CanalEntry canal={ticket.canalOrigen} />
@@ -140,12 +140,12 @@ export default function TicketDetail({
             icon: ShieldCheck 
           },
         ].map((item, idx) => (
-          <div key={idx} className="bg-white border border-gov-gray-100 p-4 rounded-xl shadow-sm space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gov-gray-400 uppercase tracking-wider">
+          <div key={idx} className="bg-white dark:bg-dark-surface border border-gov-gray-100 dark:border-dark-border p-4 rounded-xl shadow-sm space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gov-gray-400 dark:text-dark-muted uppercase tracking-wider">
               <item.icon size={12} />
               {item.label}
             </div>
-            <div className={cn("text-sm text-gov-gray-900 font-medium", item.className)}>
+            <div className={cn("text-sm text-gov-gray-900 dark:text-dark-text font-medium", item.className)}>
               {item.value}
             </div>
           </div>
@@ -154,15 +154,15 @@ export default function TicketDetail({
 
       {/* 3. SECCIÓN "MENSAJE ORIGINAL" */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 uppercase tracking-wide">
-          <MessageSquare size={18} className="text-gov-blue-700" />
+        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 dark:text-dark-text uppercase tracking-wide">
+          <MessageSquare size={18} className="text-gov-blue-700 dark:text-dark-cyan" />
           Mensaje Original del Ciudadano
         </div>
-        <div className="relative bg-gov-gray-50 border border-gov-gray-200 rounded-xl p-6">
-          <div className="absolute top-0 right-6 -translate-y-1/2 bg-white px-3 py-0.5 border border-gov-gray-200 rounded-full text-[10px] font-bold text-gov-gray-500 uppercase">
+        <div className="relative bg-gov-gray-50 dark:bg-dark-bg border border-gov-gray-200 dark:border-dark-border rounded-xl p-6">
+          <div className="absolute top-0 right-6 -translate-y-1/2 bg-white dark:bg-dark-surface px-3 py-0.5 border border-gov-gray-200 dark:border-dark-border rounded-full text-[10px] font-bold text-gov-gray-500 dark:text-dark-muted uppercase">
             {ticket.canalOrigen}
           </div>
-          <p className="text-sm text-gov-gray-700 leading-relaxed whitespace-pre-wrap font-medium italic italic-none">
+          <p className="text-sm text-gov-gray-700 dark:text-dark-muted leading-relaxed whitespace-pre-wrap font-medium italic italic-none">
             &quot;{ticket.contenidoRaw}&quot;
           </p>
         </div>
@@ -170,24 +170,24 @@ export default function TicketDetail({
 
       {/* 4. SECCIÓN "ANÁLISIS DE IA" */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 uppercase tracking-wide">
+        <div className="flex items-center gap-2 text-sm font-bold text-gov-gray-900 dark:text-dark-text uppercase tracking-wide">
           <Sparkles size={18} className="text-gov-cyan-400" />
           Análisis de IA GovTech
         </div>
         
         {resumenCargando ? (
-          <div className="flex items-center gap-3 p-4 bg-gov-cyan-50/40 border border-gov-cyan-200/60 rounded-xl text-gov-gray-700">
-            <Loader2 size={18} className="text-gov-cyan-500 animate-spin shrink-0" />
+          <div className="flex items-center gap-3 p-4 bg-gov-cyan-50/40 dark:bg-dark-accent/10 border border-gov-cyan-200/60 dark:border-dark-accent/20 rounded-xl text-gov-gray-700 dark:text-dark-muted">
+            <Loader2 size={18} className="text-gov-cyan-500 dark:text-dark-cyan animate-spin shrink-0" />
             <span className="text-sm font-medium">
               Generando resumen ejecutivo con el gateway (PQRSD-Assistant)…
             </span>
           </div>
         ) : ticket.resumenIa ? (
-          <div className="bg-gov-cyan-100/20 border-l-4 border-gov-cyan-400 p-6 rounded-r-xl space-y-2">
-            <div className="text-[10px] font-black text-gov-cyan-500 uppercase mb-2">
+          <div className="bg-gov-cyan-100/20 dark:bg-dark-accent/10 border-l-4 border-gov-cyan-400 p-6 rounded-r-xl space-y-2">
+            <div className="text-[10px] font-black text-gov-cyan-500 dark:text-dark-cyan uppercase mb-2">
               Resumen ejecutivo generado automáticamente
             </div>
-            <p className="text-sm text-gov-gray-800 leading-relaxed font-semibold whitespace-pre-wrap">
+            <p className="text-sm text-gov-gray-800 dark:text-dark-text leading-relaxed font-semibold whitespace-pre-wrap">
               {ticket.resumenIa}
             </p>
             {resumenError ? (

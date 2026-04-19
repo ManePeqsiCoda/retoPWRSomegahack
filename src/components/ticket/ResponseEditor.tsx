@@ -64,7 +64,7 @@ export default function ResponseEditor({
   };
 
   return (
-    <div className="flex flex-col gap-6 bg-white border border-gov-gray-100 rounded-2xl shadow-sm p-6">
+    <div className="flex flex-col gap-6 bg-white dark:bg-dark-surface border border-gov-gray-100 dark:border-dark-border rounded-2xl shadow-sm p-6">
       {usuario && (
         <ConfirmModal
           isOpen={isConfirmModalOpen}
@@ -85,11 +85,11 @@ export default function ResponseEditor({
       {/* 1. CABECERA DEL PANEL */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-gov-gray-900 font-bold">
-            <FileEdit size={20} className="text-gov-blue-700" />
+          <div className="flex items-center gap-2 text-gov-gray-900 dark:text-dark-text font-bold">
+            <FileEdit size={20} className="text-gov-blue-700 dark:text-dark-cyan" />
             <h2 className="text-lg">Módulo de Respuesta Oficial</h2>
           </div>
-          <p className="text-sm text-gov-gray-500">
+          <p className="text-sm text-gov-gray-500 dark:text-dark-muted">
             Valida y emite la respuesta formal al ciudadano
           </p>
         </div>
@@ -124,8 +124,8 @@ export default function ResponseEditor({
         <form onSubmit={handleFormSubmit} className="relative">
           <textarea
             className={cn(
-              "w-full min-h-[320px] p-5 text-sm text-gov-gray-900 border rounded-xl resize-y leading-relaxed transition-all shadow-inner bg-gov-gray-50/30",
-              error ? "border-sem-red ring-1 ring-sem-red" : "border-gov-gray-300 focus:ring-2 focus:ring-gov-blue-500 focus:border-transparent",
+              "w-full min-h-[320px] p-5 text-sm text-gov-gray-900 dark:text-dark-text border rounded-xl resize-y leading-relaxed transition-all shadow-inner bg-gov-gray-50/30 dark:bg-dark-bg",
+              error ? "border-sem-red ring-1 ring-sem-red" : "border-gov-gray-300 dark:border-dark-border focus:ring-2 focus:ring-gov-blue-500 focus:border-transparent",
               isSubmitting && "opacity-50 cursor-not-allowed"
             )}
             placeholder="Escribe o valida la respuesta oficial aquí..."
@@ -144,11 +144,11 @@ export default function ResponseEditor({
         />
 
         {/* 4. AVISO INSTITUCIONAL */}
-        <div className="bg-gov-gold-100/50 border border-gov-gold-500/20 rounded-xl p-4 flex gap-3">
+        <div className="bg-gov-gold-100/50 dark:bg-[#D4A017]/10 border border-gov-gold-500/20 dark:border-[#D4A017]/20 rounded-xl p-4 flex gap-3">
           <AlertTriangle size={20} className="text-gov-gold-500 shrink-0" />
           <div className="space-y-1">
-            <p className="text-xs font-bold text-gov-gray-900 uppercase tracking-tight">Recordatorio Institucional</p>
-            <p className="text-[11px] text-gov-gray-700 leading-normal">
+            <p className="text-xs font-bold text-gov-gray-900 dark:text-dark-text uppercase tracking-tight">Recordatorio Institucional</p>
+            <p className="text-[11px] text-gov-gray-700 dark:text-dark-muted leading-normal">
               Esta respuesta será registrada como comunicación oficial del Distrito de Medellín. 
               Asegúrate de cumplir con el lenguaje inclusivo y el protocolo de servicio al ciudadano.
             </p>
@@ -207,7 +207,7 @@ export default function ResponseEditor({
       )}
 
       {/* 5. BARRA DE ACCIONES */}
-      <div className="pt-2 flex items-center justify-between border-t border-gov-gray-100 pt-6">
+      <div className="pt-2 flex items-center justify-between border-t border-gov-gray-100 dark:border-dark-border pt-6">
         <div>
           {respuestaSugerida !== null && hasUnsavedChanges && !submitSuccess && (
             <button

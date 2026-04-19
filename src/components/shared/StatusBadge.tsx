@@ -10,17 +10,17 @@ const statusConfig = {
   Pendiente: {
     label: 'Pendiente',
     icon: Clock,
-    className: 'bg-gov-blue-100 text-gov-blue-700',
+    className: 'bg-gov-blue-100 text-gov-blue-700 dark:bg-dark-accent/20 dark:text-dark-cyan',
   },
   En_Revision: {
     label: 'En Revisión',
     icon: Eye,
-    className: 'bg-gov-gold-100 text-gov-gold-500',
+    className: 'bg-gov-gold-100 text-gov-gold-500 dark:bg-gov-gold-500/10 dark:text-gov-gold-500',
   },
   Resuelto: {
     label: 'Resuelto',
     icon: CheckCircle2,
-    className: 'bg-sem-green-bg text-sem-green',
+    className: 'bg-sem-green-bg text-sem-green dark:bg-sem-green/10 dark:text-sem-green',
   },
 };
 

@@ -58,21 +58,21 @@ export function getUrgencyConfig(nivel: NivelUrgencia): {
 } {
   const configs = {
     critico: {
-      bgColor: 'bg-sem-red-bg',
+      bgColor: 'bg-sem-red-bg dark:bg-sem-red/10',
       textColor: 'text-sem-red',
-      borderColor: 'border-sem-red',
+      borderColor: 'border-sem-red dark:border-sem-red/20',
       label: 'CRÍTICO'
     },
     atencion: {
-      bgColor: 'bg-sem-yellow-bg',
+      bgColor: 'bg-sem-yellow-bg dark:bg-sem-yellow/10',
       textColor: 'text-sem-yellow',
-      borderColor: 'border-sem-yellow',
+      borderColor: 'border-sem-yellow dark:border-sem-yellow/20',
       label: 'ATENCIÓN'
     },
     seguro: {
-      bgColor: 'bg-sem-green-bg',
+      bgColor: 'bg-sem-green-bg dark:bg-sem-green/10',
       textColor: 'text-sem-green',
-      borderColor: 'border-sem-green',
+      borderColor: 'border-sem-green dark:border-sem-green/20',
       label: 'SEGURO'
     }
   };

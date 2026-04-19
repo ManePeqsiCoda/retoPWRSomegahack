@@ -77,7 +77,7 @@ export default function IAAssistantPanel({
 
       {/* CUERPO DEL PANEL */}
       {isExpanded && (
-        <div className="border border-gov-blue-700/30 border-t-0 rounded-b-xl bg-white p-5 space-y-5 animate-in slide-in-from-top-2 duration-200">
+        <div className="border border-gov-blue-700/30 dark:border-dark-border border-t-0 rounded-b-xl bg-white dark:bg-dark-surface p-5 space-y-5 animate-in slide-in-from-top-2 duration-200">
           
           {!iaHabilitada ? (
             <div className="bg-gov-gold-100/50 border border-gov-gold-500/20 rounded-xl p-4 flex gap-3">
@@ -96,13 +96,13 @@ export default function IAAssistantPanel({
             <>
               {/* 1. SUGERENCIAS RÁPIDAS */}
               <div>
-                <p className="text-[10px] font-bold text-gov-gray-400 uppercase tracking-widest mb-3">Acciones rápidas e institucionales:</p>
+                <p className="text-[10px] font-bold text-gov-gray-400 dark:text-dark-muted uppercase tracking-widest mb-3">Acciones rápidas e institucionales:</p>
                 <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin scrollbar-thumb-gov-gray-200 scrollbar-track-transparent">
                   {sugerenciasRapidas.map((sug, idx) => (
                     <button
                       key={idx}
                       onClick={() => setInstruccion(sug.instruccion)}
-                      className="flex-shrink-0 text-[11px] font-bold px-3 py-2 rounded-lg border border-gov-blue-100 text-gov-gray-600 hover:bg-gov-blue-50 hover:border-gov-blue-500 hover:text-gov-blue-700 transition-all bg-white shadow-sm"
+                      className="flex-shrink-0 text-[11px] font-bold px-3 py-2 rounded-lg border border-gov-blue-100 dark:border-dark-border text-gov-gray-600 dark:text-dark-muted hover:bg-gov-blue-50 dark:hover:bg-dark-bg hover:border-gov-blue-500 dark:hover:border-dark-cyan hover:text-gov-blue-700 dark:hover:text-dark-cyan transition-all bg-white dark:bg-dark-bg shadow-sm"
                     >
                       {sug.label}
                     </button>
@@ -112,19 +112,19 @@ export default function IAAssistantPanel({
 
               {/* 2. INPUT DE INSTRUCCIÓN */}
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-gov-gray-400 uppercase tracking-widest">O escribe una instrucción personalizada:</p>
+                <p className="text-[10px] font-bold text-gov-gray-400 dark:text-dark-muted uppercase tracking-widest">O escribe una instrucción personalizada:</p>
                 <textarea
                   rows={3}
                   value={instruccion}
                   onChange={(e) => setInstruccion(e.target.value)}
-                  className="w-full text-sm border border-gov-gray-200 rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-gov-blue-500 bg-gov-gray-50/30 shadow-inner placeholder:text-gov-gray-400 leading-relaxed"
+                  className="w-full text-sm border border-gov-gray-200 dark:border-dark-border rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-gov-blue-500 bg-gov-gray-50/30 dark:bg-dark-bg dark:text-dark-text shadow-inner placeholder:text-gov-gray-400 dark:placeholder:text-dark-muted leading-relaxed"
                   placeholder="Ej: Hazla más formal. Menciona la Ley 1755. Sé más amable en el cierre..."
                 />
               </div>
 
               {/* 3. BARRA DE ACCIONES */}
               <div className="flex items-center justify-between pt-2">
-                <div className="text-[10px] font-bold text-gov-gray-400 uppercase tracking-tighter">
+                <div className="text-[10px] font-bold text-gov-gray-400 dark:text-dark-muted uppercase tracking-tighter">
                   {instruccion.length} caracteres de instrucción
                 </div>
                 
