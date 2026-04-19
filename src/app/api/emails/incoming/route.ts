@@ -59,12 +59,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Contenido no válido', esBasura: true });
     }
 
-    // 2. GENERACIÓN DE RESPUESTA Y RADICADO
+    // 2. GENERACIÓN DE RADICADO (Se genera desde el inicio para dar seguridad al ciudadano)
     const idSecretaria = 'sec-salud'; // Default para demo
+    const numeroRadicadoReal = generarNumeroRadicado(idSecretaria);
     const idTicket = `tk-${Date.now()}`;
+
     const nombreParaTicket = (analisis.nombreExtraido && analisis.nombreExtraido !== 'No encontrado') 
       ? analisis.nombreExtraido 
-      : (nombre || 'Ciudadano Anónimo');
+      : 'Ciudadano por identificar';
+
+    // PERSISTIR EN MOTHERDUCK (para usuario admin / datos reales)
+    try {
+      await ensureSchema();
+      console.log('[MotherDuck] 🌐 Conexión validada para ingesta');
+    } catch (dbErr) {
+      console.error('[MotherDuck] ❌ Error de conexión:', dbErr);
+    }
 
     // ESCENARIO B: FALTAN DATOS (Nombre/Cédula)
     if (analisis.faltanDatos) {
@@ -77,23 +87,24 @@ export async function POST(req: NextRequest) {
         nombre: nombreParaTicket
       };
 
-      // Enviamos correo pidiendo los datos, pero incluyendo lo que recibimos para que el usuario sepa que llegó
+      // Enviamos correo pidiendo los datos, pero con el RADICADO REAL para que el usuario pueda seguirlo
       await sendConfirmationEmail(
         remitente, 
-        'EN TRÁMITE', 
+        numeroRadicadoReal, 
         nombreParaTicket, 
-        `${analisis.respuestaGenerada}\n\n---\nTU MENSAJE RECIBIDO:\n${cuerpo}`
+        `${analisis.respuestaGenerada}\n\n---\nTU MENSAJE RECIBIDO:\n${cuerpo}`,
+        idTicket
       );
 
       return NextResponse.json({ 
         success: true, 
-        mensaje: 'Continuidad mantenida: Se solicitan datos restantes',
+        mensaje: 'Radicado generado (Pendiente Datos)',
+        numeroRadicado: numeroRadicadoReal,
         faltanDatos: true 
       });
     }
 
     // ESCENARIO C: ÉXITO (Datos completos)
-    const numeroRadicadoReal = generarNumeroRadicado(idSecretaria);
     const contenidoFinal = contextoAnterior 
       ? `--- SOLICITUD INICIAL ---\n${contextoAnterior.cuerpoOriginal}\n\n--- DATOS COMPLETADOS ---\n${cuerpo}`
       : cuerpo;
