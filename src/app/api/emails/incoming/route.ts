@@ -19,6 +19,23 @@ export async function POST(req: NextRequest) {
     const { remitente: remitenteRaw, nombre, asunto, cuerpo } = body;
     const remitente = extraerEmail(remitenteRaw || '');
 
+    // --- FILTRO DE SEGURIDAD Y RELEVANCIA ---
+    const dominiosBloqueados = ['instagram.com', 'facebookmail.com', 'twitter.com', 'linkedin.com', 'pinterest.com'];
+    const keywordsBloqueadas = ['noreply', 'no-reply', 'notification', 'alert', 'newsletter', 'donotreply'];
+    
+    const esIrrelevante = 
+      dominiosBloqueados.some(dom => remitente.toLowerCase().endsWith(dom)) ||
+      keywordsBloqueadas.some(key => remitente.toLowerCase().includes(key)) ||
+      (asunto && keywordsBloqueadas.some(key => asunto.toLowerCase().includes(key)));
+
+    if (esIrrelevante) {
+      console.log(`[Filtro-Spam] 🚫 Correo ignorado de: ${remitente}`);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'El remitente o contenido no parece ser una solicitud ciudadana válida (posible sistema automatizado).' 
+      }, { status: 200 }); // Status 200 para que el webhook no reintente
+    }
+
     if (!remitente || !cuerpo) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }

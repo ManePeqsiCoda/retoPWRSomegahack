@@ -76,7 +76,7 @@ El proyecto se encuentra en una fase de **estabilización para demo**. Se han re
 ---
 
 ## 7. Base de Datos
-- **Instancia**: `crm-pqrsd` en MotherDuck.
+- **Instancia**: `crm-pqrsyd` en MotherDuck.
 - **Tablas**:
   - `tickets`: Almacena el ciclo de vida, contenido raw, resúmenes de IA y metadatos legales.
   - `secretarias`: Define las dependencias del distrito y sus colores institucionales.
