@@ -25,6 +25,7 @@ interface TicketDetailProps {
   /** Fallo al generar resumen en vivo; el texto mostrado puede ser el mock. */
   resumenError?: string | null;
   onCambiarEstado?: (nuevo: TicketEstado) => void;
+  onActualizarCiudadano?: (nombre: string, email: string, telefono?: string) => Promise<void>;
   isSubmitting?: boolean;
 }
 
@@ -53,8 +54,25 @@ export default function TicketDetail({
   onCambiarEstado,
   isSubmitting = false,
 }: TicketDetailProps) {
-  const secretaria = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria);
-  
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [editNombre, setEditNombre] = useState(ticket.nombreCiudadano);
+  const [editEmail, setEditEmail] = useState(ticket.emailCiudadano || '');
+  const [editTelefono, setEditTelefono] = useState(ticket.telefonoCiudadano || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleSaveContact = async () => {
+    if (!onActualizarCiudadano) return;
+    setIsUpdating(true);
+    try {
+      await onActualizarCiudadano(editNombre, editEmail, editTelefono);
+      setIsEditingContact(false);
+    } catch (e) {
+      alert('Error al actualizar contacto: ' + (e instanceof Error ? e.message : 'Desconocido'));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const isCritical = ticket.nivelUrgencia === 'critico';
   const urgencyColor = isCritical ? 'text-sem-red' : ticket.nivelUrgencia === 'atencion' ? 'text-sem-yellow' : 'text-sem-green';
 
@@ -79,9 +97,52 @@ export default function TicketDetail({
           </div>
         </div>
 
-        <div className="sm:text-right flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
-          <p className="text-white/50 text-[10px] uppercase tracking-wide">Contacto del Ciudadano</p>
-          {ticket.emailCiudadano ? (
+        <div className="sm:text-right flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10 min-w-[200px]">
+          <div className="flex items-center sm:justify-end gap-2 mb-1">
+            <p className="text-white/50 text-[10px] uppercase tracking-wide">Contacto del Ciudadano</p>
+            {!isEditingContact && onActualizarCiudadano && (
+              <button 
+                onClick={() => setIsEditingContact(true)}
+                className="text-gov-cyan-400 hover:text-white text-[10px] font-bold uppercase underline decoration-gov-cyan-400/30"
+              >
+                Editar
+              </button>
+            )}
+          </div>
+          
+          {isEditingContact ? (
+            <div className="space-y-2 mt-2">
+              <input 
+                type="text"
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-gov-cyan-400"
+                placeholder="Nombre"
+                value={editNombre}
+                onChange={e => setEditNombre(e.target.value)}
+              />
+              <input 
+                type="email"
+                className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-gov-cyan-400"
+                placeholder="Email"
+                value={editEmail}
+                onChange={e => setEditEmail(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button 
+                  disabled={isUpdating}
+                  onClick={handleSaveContact}
+                  className="flex-1 bg-gov-cyan-400 text-gov-blue-900 text-[10px] font-black uppercase py-1 rounded hover:bg-white transition-colors disabled:opacity-50"
+                >
+                  {isUpdating ? '...' : 'Guardar'}
+                </button>
+                <button 
+                  onClick={() => setIsEditingContact(false)}
+                  className="flex-1 border border-white/20 text-white text-[10px] font-black uppercase py-1 rounded hover:bg-white/10 transition-colors"
+                >
+                  X
+                </button>
+              </div>
+            </div>
+          ) : ticket.emailCiudadano ? (
             <p className="text-gov-cyan-400 text-xs md:text-sm font-mono mt-0.5 break-all">
               {ticket.emailCiudadano}
             </p>

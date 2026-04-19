@@ -30,6 +30,7 @@ interface UseTicketDetailReturn {
   submitRespuesta: () => Promise<void>;
   resetRespuesta: () => void;
   cambiarEstado: (nuevoEstado: TicketEstado) => Promise<void>;
+  actualizarCiudadano: (nombre: string, email: string, telefono?: string) => Promise<void>;
 }
 
 export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
@@ -270,6 +271,36 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     }
   }, [ticket, idSecretariaActivo, dataMode]);
 
+  const actualizarCiudadano = useCallback(async (nombre: string, email: string, telefono?: string) => {
+    if (!ticket || !idSecretariaActivo) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticket.idTicket}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombreCiudadano: nombre,
+          emailCiudadano: email,
+          telefonoCiudadano: telefono
+        })
+      });
+
+      if (!res.ok) throw new Error('Fallo al actualizar datos del ciudadano');
+
+      setTicket(curr => curr ? { 
+        ...curr, 
+        nombreCiudadano: nombre, 
+        emailCiudadano: email, 
+        telefonoCiudadano: telefono 
+      } : null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al actualizar ciudadano');
+      throw e;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [ticket, idSecretariaActivo]);
+
   return {
     ticket,
     isLoading,
@@ -291,5 +322,6 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     submitRespuesta,
     resetRespuesta,
     cambiarEstado,
+    actualizarCiudadano,
   };
 }

@@ -59,6 +59,8 @@ export async function PATCH(
       respuestaSugerida: 'respuesta_sugerida',
       resumenIa: 'resumen_ia',
       nombreCiudadano: 'nombre_ciudadano',
+      emailCiudadano: 'email_ciudadano',
+      telefonoCiudadano: 'telefono_ciudadano',
       tipoSolicitud: 'tipo_solicitud',
     };
 

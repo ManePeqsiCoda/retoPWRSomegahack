@@ -228,15 +228,26 @@ export default function RadicacionManualPage() {
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-gov-gray-400 dark:text-dark-muted uppercase ml-1">Correo Electrónico</label>
                       <div className="relative group">
-                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gov-gray-300 group-focus-within:text-gov-blue-500 transition-colors" />
+                        <Mail size={16} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                          form.emailCiudadano && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailCiudadano.trim())
+                            ? 'text-sem-red'
+                            : 'text-gov-gray-300 group-focus-within:text-gov-blue-500'
+                        }`} />
                         <input 
                           type="email"
                           placeholder="ciudadano@email.com"
-                          className="w-full pl-11 pr-4 py-3 bg-gov-gray-50 dark:bg-dark-bg border border-gov-gray-200 dark:border-dark-border rounded-xl text-sm focus:ring-2 focus:ring-gov-blue-500 transition-all outline-none"
+                          className={`w-full pl-11 pr-4 py-3 bg-gov-gray-50 dark:bg-dark-bg border rounded-xl text-sm focus:ring-2 transition-all outline-none ${
+                            form.emailCiudadano && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailCiudadano.trim())
+                              ? 'border-sem-red focus:ring-sem-red/20'
+                              : 'border-gov-gray-200 dark:border-dark-border focus:ring-gov-blue-500'
+                          }`}
                           value={form.emailCiudadano}
                           onChange={(e) => updateTicket(form.id, 'emailCiudadano', e.target.value)}
                         />
                       </div>
+                      {form.emailCiudadano && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.emailCiudadano.trim()) && (
+                        <p className="text-[9px] text-sem-red font-bold uppercase mt-1 ml-1 animate-pulse">Formato de email inválido</p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-gov-gray-400 dark:text-dark-muted uppercase ml-1">Teléfono</label>
