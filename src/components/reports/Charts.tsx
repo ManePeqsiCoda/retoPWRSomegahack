@@ -11,7 +11,11 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  AreaChart,
+  Area,
+  LineChart,
+  Line
 } from 'recharts';
 
 /**
@@ -19,9 +23,19 @@ import {
  */
 export function GraficaBarras({ data }: { data: { semana: string; ingresados: number; resueltos: number; vencidos: number }[] }) {
   return (
-    <div className="w-full h-[220px]">
+    <div className="w-full h-[280px]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorIngresados" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#003DA5" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#003DA5" stopOpacity={0.1}/>
+            </linearGradient>
+            <linearGradient id="colorResueltos" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#00875A" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#00875A" stopOpacity={0.1}/>
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
           <XAxis 
             dataKey="semana" 
@@ -41,10 +55,60 @@ export function GraficaBarras({ data }: { data: { semana: string; ingresados: nu
             iconType="circle"
             wrapperStyle={{ fontSize: '10px', fontWeight: 700, paddingTop: '10px' }}
           />
-          <Bar dataKey="ingresados" name="Ingresados" fill="#003DA5" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="resueltos" name="Resueltos" fill="#00875A" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="vencidos" name="Vencidos" fill="#DC2626" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="ingresados" name="Ingresados" fill="url(#colorIngresados)" radius={[6, 6, 0, 0]} barSize={24} />
+          <Bar dataKey="resueltos" name="Resueltos" fill="url(#colorResueltos)" radius={[6, 6, 0, 0]} barSize={24} />
+          <Line 
+            type="monotone" 
+            dataKey="vencidos" 
+            name="Vencidos" 
+            stroke="#DC2626" 
+            strokeWidth={3} 
+            dot={{ r: 4, fill: '#DC2626', strokeWidth: 2, stroke: '#fff' }} 
+            activeDot={{ r: 6 }}
+          />
         </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * 1.1. Gráfica de Área: Evolución Diaria
+ */
+export function GraficaTendenciaArea({ data }: { data: { fecha: string; cantidad: number }[] }) {
+  return (
+    <div className="w-full h-[220px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#00FFFF" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#00FFFF" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+          <XAxis 
+            dataKey="fecha" 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fontSize: 9, fontWeight: 600, fill: '#9ca3af' }}
+          />
+          <YAxis 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fontSize: 9, fontWeight: 600, fill: '#9ca3af' }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Area 
+            type="monotone" 
+            dataKey="cantidad" 
+            name="Tickets" 
+            stroke="#00FFFF" 
+            strokeWidth={3}
+            fillOpacity={1} 
+            fill="url(#colorArea)" 
+          />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

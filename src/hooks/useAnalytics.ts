@@ -41,6 +41,7 @@ interface UseAnalyticsReturn {
   distribucionPorTipo: DistribucionTipo[];
   distribucionPorCanal: DistribucionCanal[];
   tendenciaSemanal: TendenciaSemanal[];
+  tendenciaDiaria: { fecha: string; cantidad: number }[];
   isLoading: boolean;
 }
 
@@ -128,27 +129,23 @@ export function useAnalytics(): UseAnalyticsReturn {
   }, [tickets]);
 
   // 4. Tendencia Semanal (Últimas 4 semanas)
-  const tendenciaSemanal = useMemo(() => {
+  }, [tickets]);
+
+  // 5. Tendencia Diaria (Últimos 7 días)
+  const tendenciaDiaria = useMemo(() => {
     const hoy = new Date();
-    const semanas = [3, 2, 1, 0].map(offset => {
-      const inicio = startOfWeek(subWeeks(hoy, offset), { weekStartsOn: 1 });
-      const fin = new Date(inicio.getTime() + 6 * 24 * 60 * 60 * 1000);
-      return {
-        label: `Sem ${offset === 0 ? 'Act' : 4 - offset}`,
-        intervalo: { start: inicio, end: fin }
-      };
-    });
-
-    return semanas.map(sem => {
-      const ticketsSemana = tickets.filter(t => 
-        isWithinInterval(new Date(t.fechaCreacion), sem.intervalo)
-      );
+    return [6, 5, 4, 3, 2, 1, 0].map(d => {
+      const fecha = new Date(hoy);
+      fecha.setDate(hoy.getDate() - d);
+      const fechaStr = fecha.toISOString().split('T')[0];
+      
+      const count = tickets.filter(t => 
+        t.fechaCreacion.startsWith(fechaStr)
+      ).length;
 
       return {
-        semana: sem.label,
-        ingresados: ticketsSemana.length,
-        resueltos: ticketsSemana.filter(t => t.estado === 'Resuelto').length,
-        vencidos: ticketsSemana.filter(t => t.diasRestantes < 0).length
+        fecha: fecha.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }),
+        cantidad: count
       };
     });
   }, [tickets]);
@@ -158,6 +155,7 @@ export function useAnalytics(): UseAnalyticsReturn {
     distribucionPorTipo,
     distribucionPorCanal,
     tendenciaSemanal,
+    tendenciaDiaria,
     isLoading
   };
 }

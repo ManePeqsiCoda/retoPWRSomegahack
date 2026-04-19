@@ -2,7 +2,7 @@
 
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useAuthStore } from '@/store/authStore';
-import { MetricCard, GraficaBarras, GraficaDonut, GraficaCanales } from '@/components/reports';
+import { MetricCard, GraficaBarras, GraficaDonut, GraficaCanales, GraficaTendenciaArea } from '@/components/reports';
 import { 
   BarChart3, 
   Clock, 
@@ -145,12 +145,26 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* 4. CANALES DE ENTRADA */}
-      <div className="bg-white dark:bg-dark-surface rounded-3xl border border-gov-gray-100 dark:border-dark-border p-6 shadow-sm">
-        <h2 className="text-sm font-black text-gov-gray-800 dark:text-dark-text uppercase tracking-widest mb-8">
-          Volumen por Canal de Origen
-        </h2>
-        <GraficaCanales data={distribucionPorCanal} />
+      {/* 4. EVOLUCIÓN DIARIA Y CANALES */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-dark-surface rounded-3xl border border-gov-gray-100 dark:border-dark-border p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-sm font-black text-gov-gray-800 dark:text-dark-text uppercase tracking-widest">
+              Actividad Diaria (Tickets)
+            </h2>
+            <div className="px-3 py-1 bg-gov-cyan-50 dark:bg-dark-accent/10 rounded-full text-[9px] font-black text-gov-cyan-600 dark:text-dark-cyan uppercase">
+              Última semana
+            </div>
+          </div>
+          <GraficaTendenciaArea data={tendenciaDiaria} />
+        </div>
+
+        <div className="bg-white dark:bg-dark-surface rounded-3xl border border-gov-gray-100 dark:border-dark-border p-6 shadow-sm">
+          <h2 className="text-sm font-black text-gov-gray-800 dark:text-dark-text uppercase tracking-widest mb-8">
+            Volumen por Canal de Origen
+          </h2>
+          <GraficaCanales data={distribucionPorCanal} />
+        </div>
       </div>
     </div>
   );
