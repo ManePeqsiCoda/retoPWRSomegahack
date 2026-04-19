@@ -1,193 +1,224 @@
-import { 
-  TICKETS_MOCK, 
-  SECRETARIAS_MOCK, 
-  DELAY_SIMULADO_MS 
+import {
+  TICKETS_MOCK,
+  SECRETARIAS_MOCK,
+  DELAY_SIMULADO_MS,
 } from './mockData';
-import { 
-  Ticket, 
-  TicketsFilter, 
-  ApiResponse, 
+import {
+  Ticket,
+  TicketsFilter,
+  ApiResponse,
   Secretaria,
-  TicketEstado 
+  TicketEstado,
 } from '@/types';
+import { DataMode } from '@/store/authStore';
 
-/**
- * REGLA DE NEGOCIO CRÍTICA (RBAC):
- * Solo retorna tickets cuyo idSecretaria === idSecretariaUsuario.
- */
-export async function getTicketsBySecretaria(
-  idSecretariaUsuario: string,
+// ──────────────────────────────────────────────────
+// CAPA LIVE: llamadas a los API Routes internos
+// ──────────────────────────────────────────────────
+
+async function liveGetTickets(
+  idSecretaria: string,
   filters?: TicketsFilter
 ): Promise<ApiResponse<Ticket[]>> {
-  try {
-    // ----------------------------------------------------------------------
-    // HANDOVER AL BACKEND:
-    // Elimina este bloque mockeado e implementa el llamado fetch al Gateway
-    // Ejemplo de endpoint esperado:
-    // GET /api/tickets?idSecretaria={idSecretariaUsuario}&estado={estado}...
-    // ----------------------------------------------------------------------
-    await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
+  const params = new URLSearchParams();
+  params.set('idSecretaria', idSecretaria);
+  if (filters?.estado && filters.estado !== 'Todos') params.set('estado', filters.estado);
+  if (filters?.tipoSolicitud && filters.tipoSolicitud !== 'Todos') params.set('tipo', filters.tipoSolicitud);
+  if (filters?.searchQuery) params.set('search', filters.searchQuery);
 
-    let tickets = TICKETS_MOCK.filter(t => t.idSecretaria === idSecretariaUsuario);
+  const res = await fetch(`/api/tickets?${params.toString()}`);
+  const json = await res.json();
 
-    if (filters) {
-      if (filters.estado && filters.estado !== 'Todos') {
-        tickets = tickets.filter(t => t.estado === filters.estado);
-      }
-      if (filters.tipoSolicitud && filters.tipoSolicitud !== 'Todos') {
-        tickets = tickets.filter(t => t.tipoSolicitud === filters.tipoSolicitud);
-      }
-      if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        tickets = tickets.filter(t => 
-          t.nombreCiudadano.toLowerCase().includes(query) || 
-          t.contenidoRaw.toLowerCase().includes(query)
-        );
-      }
-    }
-
-    return {
-      data: tickets,
-      total: tickets.length,
-      timestamp: new Date().toISOString()
-    };
-
-  } catch (error) {
-    return {
-      data: [],
-      total: 0,
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Error desconocido'
-    };
+  if (!res.ok) {
+    return { data: [], total: 0, timestamp: new Date().toISOString(), error: json.error || 'Error de red' };
   }
+
+  return json;
 }
 
-/**
- * Obtiene el detalle de un ticket específico validando el acceso.
- */
-export async function getTicketById(
+async function liveGetTicketById(
   idTicket: string,
-  idSecretariaUsuario: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _idSecretaria: string
 ): Promise<ApiResponse<Ticket | null>> {
-  try {
-    // ----------------------------------------------------------------------
-    // HANDOVER AL BACKEND:
-    // Sustituye todo este bloque por un llamado fetch real
-    // Ejemplo: GET /api/tickets/{idTicket}?idSecretariaUsuario={idSecretariaUsuario}
-    // IMPORTANTE: El backend DEBE asegurar que ese ticket corresponde a esa secretaría.
-    // Si no, retornar 403 o { error: 'ACCESO_DENEGADO' }
-    // ----------------------------------------------------------------------
-    await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
-    
-    const ticket = TICKETS_MOCK.find(t => t.idTicket === idTicket);
+  const res = await fetch(`/api/tickets/${idTicket}`);
+  const json = await res.json();
 
-    if (!ticket) {
-      return { data: null, total: 0, timestamp: new Date().toISOString(), error: 'NOT_FOUND' };
-    }
-
-    // REGLA DE SEGURIDAD (RBAC): Prevenir acceso a tickets de otras secretarías
-    if (ticket.idSecretaria !== idSecretariaUsuario) {
-      return { 
-        data: null, 
-        total: 0, 
-        timestamp: new Date().toISOString(), 
-        error: 'ACCESO_DENEGADO' 
-      };
-    }
-
-    return { data: ticket, total: 1, timestamp: new Date().toISOString() };
-
-  } catch (error) {
+  if (!res.ok) {
     return {
       data: null,
       total: 0,
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Error en el servidor'
+      error: json.error || 'NOT_FOUND',
     };
   }
+
+  return json;
 }
 
-/**
- * Envía la respuesta oficial a una solicitud PQRSD.
- */
-export async function actualizarRespuesta(
+async function liveActualizarRespuesta(
   idTicket: string,
   respuestaFinal: string,
-  idSecretariaUsuario: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _idSecretaria: string
 ): Promise<ApiResponse<{ success: boolean }>> {
-  try {
-    // ----------------------------------------------------------------------
-    // HANDOVER AL BACKEND:
-    // Reemplazar este mock por una mutación en base de datos.
-    // Ejemplo:
-    // PUT /api/tickets/{idTicket}/responder
-    // Body: { respuestaFinal, idSecretariaUsuario }
-    // En BD: SET respuesta_sugerida = respuestaFinal, estado = 'Resuelto'
-    // ----------------------------------------------------------------------
-    await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
-    
-    const ticket = TICKETS_MOCK.find(t => t.idTicket === idTicket);
-    if (!ticket || ticket.idSecretaria !== idSecretariaUsuario) {
-      throw new Error('No tienes permisos para responder este ticket');
+  const res = await fetch(`/api/tickets/${idTicket}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      respuestaSugerida: respuestaFinal,
+      estado: 'Resuelto',
+    }),
+  });
+
+  const json = await res.json();
+  return {
+    data: { success: res.ok },
+    total: res.ok ? 1 : 0,
+    timestamp: new Date().toISOString(),
+    error: res.ok ? undefined : json.error,
+  };
+}
+
+async function liveActualizarEstado(
+  idTicket: string,
+  nuevoEstado: TicketEstado
+): Promise<void> {
+  const res = await fetch(`/api/tickets/${idTicket}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ estado: nuevoEstado }),
+  });
+
+  if (!res.ok) throw new Error('Error al actualizar estado');
+}
+
+// ──────────────────────────────────────────────────
+// CAPA MOCK: datos locales (original)
+// ──────────────────────────────────────────────────
+
+async function mockGetTickets(
+  idSecretaria: string,
+  filters?: TicketsFilter
+): Promise<ApiResponse<Ticket[]>> {
+  await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
+
+  let tickets = TICKETS_MOCK.filter(t => t.idSecretaria === idSecretaria);
+
+  if (filters) {
+    if (filters.estado && filters.estado !== 'Todos') {
+      tickets = tickets.filter(t => t.estado === filters.estado);
     }
-
-    return { 
-      data: { success: true }, 
-      total: 1, 
-      timestamp: new Date().toISOString() 
-    };
-
-  } catch (error) {
-    return {
-      data: { success: false },
-      total: 0,
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Error al procesar respuesta'
-    };
+    if (filters.tipoSolicitud && filters.tipoSolicitud !== 'Todos') {
+      tickets = tickets.filter(t => t.tipoSolicitud === filters.tipoSolicitud);
+    }
+    if (filters.searchQuery) {
+      const q = filters.searchQuery.toLowerCase();
+      tickets = tickets.filter(
+        t =>
+          t.nombreCiudadano.toLowerCase().includes(q) ||
+          t.contenidoRaw.toLowerCase().includes(q)
+      );
+    }
   }
+
+  return { data: tickets, total: tickets.length, timestamp: new Date().toISOString() };
 }
 
-/**
- * Obtiene el catálogo de secretarías del Distrito.
- */
-export async function getSecretarias(): Promise<ApiResponse<Secretaria[]>> {
-  try {
-    // ----------------------------------------------------------------------
-    // HANDOVER AL BACKEND:
-    // Conectar catálogo real desde tabla "secretarias"
-    // GET /api/secretarias -> [{ idSecretaria, nombre, colorIdentificador }]
-    // ----------------------------------------------------------------------
-    await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
-    return {
-      data: SECRETARIAS_MOCK,
-      total: SECRETARIAS_MOCK.length,
-      timestamp: new Date().toISOString()
-    };
+async function mockGetTicketById(
+  idTicket: string,
+  idSecretaria: string
+): Promise<ApiResponse<Ticket | null>> {
+  await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
 
-  } catch (error) {
-    return {
-      data: [],
-      total: 0,
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Error de conexión'
-    };
+  const ticket = TICKETS_MOCK.find(t => t.idTicket === idTicket);
+  if (!ticket) {
+    return { data: null, total: 0, timestamp: new Date().toISOString(), error: 'NOT_FOUND' };
   }
+  if (ticket.idSecretaria !== idSecretaria) {
+    return { data: null, total: 0, timestamp: new Date().toISOString(), error: 'ACCESO_DENEGADO' };
+  }
+  return { data: ticket, total: 1, timestamp: new Date().toISOString() };
 }
 
-/**
- * Actualiza el estado de un ticket (PATCH simulado).
- * En producción, esto enviaría un PUT/PATCH /api/tickets/{id} al backend.
- */
-export async function actualizarEstadoTicket(idTicket: string, nuevoEstado: TicketEstado): Promise<void> {
-  // Simular latencia de red
+async function mockActualizarRespuesta(
+  idTicket: string,
+  respuestaFinal: string,
+  idSecretaria: string
+): Promise<ApiResponse<{ success: boolean }>> {
+  await new Promise(resolve => setTimeout(resolve, DELAY_SIMULADO_MS));
+
+  const ticket = TICKETS_MOCK.find(t => t.idTicket === idTicket);
+  if (!ticket || ticket.idSecretaria !== idSecretaria) {
+    throw new Error('No tienes permisos para responder este ticket');
+  }
+
+  return { data: { success: true }, total: 1, timestamp: new Date().toISOString() };
+}
+
+async function mockActualizarEstado(idTicket: string, nuevoEstado: TicketEstado): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 300));
-
-  const ticketIndex = TICKETS_MOCK.findIndex(t => t.idTicket === idTicket);
-  if (ticketIndex !== -1) {
-    TICKETS_MOCK[ticketIndex].estado = nuevoEstado;
-    console.log(`[MockDB] Ticket ${idTicket} actualizado a ${nuevoEstado}`);
+  const idx = TICKETS_MOCK.findIndex(t => t.idTicket === idTicket);
+  if (idx !== -1) {
+    TICKETS_MOCK[idx].estado = nuevoEstado;
   } else {
     throw new Error('Ticket no encontrado');
   }
 }
 
+// ──────────────────────────────────────────────────
+// FUNCIONES PÚBLICAS — Despachan según DataMode
+// ──────────────────────────────────────────────────
+
+let _currentDataMode: DataMode = 'mock';
+
+/** Configura el modo de datos para las próximas llamadas al servicio. */
+export function setServiceDataMode(mode: DataMode) {
+  _currentDataMode = mode;
+}
+
+export async function getTicketsBySecretaria(
+  idSecretaria: string,
+  filters?: TicketsFilter
+): Promise<ApiResponse<Ticket[]>> {
+  return _currentDataMode === 'live'
+    ? liveGetTickets(idSecretaria, filters)
+    : mockGetTickets(idSecretaria, filters);
+}
+
+export async function getTicketById(
+  idTicket: string,
+  idSecretaria: string
+): Promise<ApiResponse<Ticket | null>> {
+  return _currentDataMode === 'live'
+    ? liveGetTicketById(idTicket, idSecretaria)
+    : mockGetTicketById(idTicket, idSecretaria);
+}
+
+export async function actualizarRespuesta(
+  idTicket: string,
+  respuestaFinal: string,
+  idSecretaria: string
+): Promise<ApiResponse<{ success: boolean }>> {
+  return _currentDataMode === 'live'
+    ? liveActualizarRespuesta(idTicket, respuestaFinal, idSecretaria)
+    : mockActualizarRespuesta(idTicket, respuestaFinal, idSecretaria);
+}
+
+export async function getSecretarias(): Promise<ApiResponse<Secretaria[]>> {
+  // Secretarías always from mock (static catalog)
+  return {
+    data: SECRETARIAS_MOCK,
+    total: SECRETARIAS_MOCK.length,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export async function actualizarEstadoTicket(
+  idTicket: string,
+  nuevoEstado: TicketEstado
+): Promise<void> {
+  return _currentDataMode === 'live'
+    ? liveActualizarEstado(idTicket, nuevoEstado)
+    : mockActualizarEstado(idTicket, nuevoEstado);
+}

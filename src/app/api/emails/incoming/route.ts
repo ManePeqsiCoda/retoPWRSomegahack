@@ -4,10 +4,13 @@ import { procesarCorreoConIA } from '@/services/iaTemplateService';
 import { sendConfirmationEmail } from '@/services/emailService';
 import { TICKETS_MOCK, MEMORIA_HILOS_MOCK } from '@/services/mockData';
 import { Ticket } from '@/types';
+import { query, ensureSchema } from '@/lib/motherduck';
 
 /**
  * API ENDPOINT: Ingesta de Correos Electrónicos
  * Sistema con Memoria de Continuidad: Detecta si es una respuesta a una solicitud anterior.
+ * 
+ * Persiste tickets tanto en MOCK (memoria) como en MotherDuck (cloud DB).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +42,6 @@ export async function POST(req: NextRequest) {
 
     // 2. GENERACIÓN DE RESPUESTA Y RADICADO
     const idSecretaria = 'sec-salud'; // Default para demo
-    const numeroRadicado = analisis.faltanDatos ? 'PENDIENTE-DATOS' : generarNumeroRadicado(idSecretaria);
     const idTicket = `tk-${Date.now()}`;
     const nombreParaTicket = (analisis.nombreExtraido && analisis.nombreExtraido !== 'No encontrado') 
       ? analisis.nombreExtraido 
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (analisis.faltanDatos) {
       console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
       
-      // Enviamos correo pidiendo los datos (usamos el mismo servicio pero con el texto de la IA)
+      // Enviamos correo pidiendo los datos
       await sendConfirmationEmail(
         remitente, 
         'EN TRÁMITE', 
@@ -65,10 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ESCENARIO C: ÉXITO (Datos completos)
-    // 1. Generar radicado real
     const numeroRadicadoReal = generarNumeroRadicado(idSecretaria);
-
-    // 2. Crear ticket con el contenido fusionado (Historial + Nuevo)
     const contenidoFinal = contextoAnterior 
       ? `--- SOLICITUD INICIAL ---\n${contextoAnterior.cuerpoOriginal}\n\n--- DATOS COMPLETADOS ---\n${cuerpo}`
       : cuerpo;
@@ -90,16 +89,47 @@ export async function POST(req: NextRequest) {
       canalOrigen: 'Email',
     };
 
+    // PERSISTIR EN MOCK (para usuario de prueba)
     TICKETS_MOCK.unshift(nuevoTicket);
+
+    // PERSISTIR EN MOTHERDUCK (para usuario admin / datos reales)
+    try {
+      await ensureSchema();
+      await query(
+        `INSERT INTO tickets (
+          id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
+          email_ciudadano, tipo_solicitud, asunto, contenido_raw,
+          resumen_ia, respuesta_sugerida, estado, canal_origen,
+          fecha_creacion, fecha_limite, fecha_actualizacion
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,now())`,
+        [
+          nuevoTicket.idTicket, nuevoTicket.numeroRadicado, nuevoTicket.idSecretaria,
+          nuevoTicket.nombreCiudadano, nuevoTicket.emailCiudadano, nuevoTicket.tipoSolicitud,
+          nuevoTicket.asunto, nuevoTicket.contenidoRaw, nuevoTicket.resumenIa,
+          nuevoTicket.respuestaSugerida, nuevoTicket.estado, nuevoTicket.canalOrigen,
+          nuevoTicket.fechaCreacion, nuevoTicket.fechaLimite,
+        ]
+      );
+      console.log(`[MotherDuck] ✅ Ticket ${idTicket} persistido en la nube`);
+    } catch (dbErr) {
+      // Si falla MotherDuck, el ticket sigue existiendo en MOCK
+      console.error('[MotherDuck] ⚠️ No se pudo persistir en DB (el ticket existe en mock):', dbErr);
+    }
     
-    // 3. LIMPIAR MEMORIA (La conversación ha concluido con un radicado)
+    // LIMPIAR MEMORIA (La conversación ha concluido con un radicado)
     delete MEMORIA_HILOS_MOCK[remitente];
     console.log(`[IA-Continuidad] ✅ Hilo cerrado y ticket creado: ${numeroRadicadoReal}`);
 
-    // 4. Enviar respuesta humana final
-    await sendConfirmationEmail(remitente, numeroRadicadoReal, nombreParaTicket, analisis.respuestaGenerada);
+    // Enviar respuesta humana final con link de seguimiento
+    await sendConfirmationEmail(
+      remitente, 
+      numeroRadicadoReal, 
+      nombreParaTicket, 
+      analisis.respuestaGenerada,
+      idTicket  // ← Para generar el link de seguimiento
+    );
 
-    return NextResponse.json({ success: true, numeroRadicado });
+    return NextResponse.json({ success: true, numeroRadicado: numeroRadicadoReal, idTicket });
 
   } catch (error) {
     console.error('[Ingesta-Error]', error);
