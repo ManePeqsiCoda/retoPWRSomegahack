@@ -17,6 +17,8 @@ export default function CRMLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   // 1. Protección de Rutas (Frontend Guard)
