@@ -1,5 +1,6 @@
 import type { EmailSendResult, TipoEmail } from '@/types';
 import nodemailer, { Transporter } from 'nodemailer';
+import { extraerEmail } from '@/lib/utils';
 
 export interface EmailOptions {
   to:       string;
@@ -119,7 +120,7 @@ class NodemailerTransporter implements IEmailTransporter {
       
       const info = await this.transporter.sendMail({
         from:    `"${fromName}" <${this.from}>`,
-        to:      options.toName ? `"${options.toName}" <${options.to}>` : options.to,
+        to:      options.toName ? `"${options.toName}" <${extraerEmail(options.to)}>` : extraerEmail(options.to),
         subject: options.subject,
         html:    options.html,
         text:    options.text,

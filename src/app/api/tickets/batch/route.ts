@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, ensureSchema } from '@/lib/motherduck';
 import { generarNumeroRadicado } from '@/lib/radicado';
 import { sendConfirmationEmail } from '@/services/emailService';
+import { extraerEmail } from '@/lib/utils';
 
 interface ManualTicketInput {
   idSecretaria?: string;
@@ -27,12 +28,14 @@ export async function POST(req: NextRequest) {
     const results = [];
 
     for (const t of tickets) {
-      // Generar metadatos para cada ticket
       const idTicket = `tk-manual-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const numeroRadicado = generarNumeroRadicado(t.idSecretaria || 'sec-salud');
+      const secId = t.idSecretaria || 'sec-salud';
+      const emailCiudadanoLimpio = extraerEmail(t.emailCiudadano || '');
+      const numeroRadicado = generarNumeroRadicado(secId);
       const fechaCreacion = new Date().toISOString();
       const fechaLimite = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
-      const nombreCiudadano = t.nombreCiudadano?.trim() || 'Ciudadano Anónimo';
+
+      console.log(`[Batch-Insert] ℹ️ Procesando ticket para secretaría: ${secId}`);
 
       await query(
         `INSERT INTO tickets (
@@ -43,10 +46,10 @@ export async function POST(req: NextRequest) {
         [
           idTicket,
           numeroRadicado,
-          t.idSecretaria || 'sec-salud',
-          nombreCiudadano,
+          secId,
+          t.nombreCiudadano || 'Anónimo',
           t.documento?.trim() || null,
-          t.emailCiudadano?.trim() || null,
+          emailCiudadanoLimpio || null,
           t.telefono?.trim() || null,
           t.tipoSolicitud || 'Peticion',
           t.asunto || 'Radicación Manual (Físico)',
@@ -59,19 +62,18 @@ export async function POST(req: NextRequest) {
       );
       
       // 3. Enviar correo de confirmación si el ciudadano proporcionó email
-      const emailCiudadano = t.emailCiudadano?.trim();
-      if (emailCiudadano && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCiudadano)) {
+      if (emailCiudadanoLimpio && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCiudadanoLimpio)) {
         try {
           await sendConfirmationEmail(
-            emailCiudadano,
+            emailCiudadanoLimpio,
             numeroRadicado,
-            nombreCiudadano,
+            t.nombreCiudadano || 'Ciudadano',
             t.contenidoRaw,
             idTicket
           );
-          console.log(`[Batch-Email] ✅ Confirmación enviada a ${emailCiudadano}`);
+          console.log(`[Batch-Email] ✅ Confirmación enviada a ${emailCiudadanoLimpio}`);
         } catch (mailErr) {
-          console.error(`[Batch-Email] ❌ Fallo al enviar a ${emailCiudadano}:`, mailErr);
+          console.error(`[Batch-Email] ❌ Fallo al enviar a ${emailCiudadanoLimpio}:`, mailErr);
         }
       }
       

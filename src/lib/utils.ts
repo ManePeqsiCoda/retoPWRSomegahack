@@ -56,3 +56,15 @@ export function obtenerIniciales(nombreCompleto: string): string {
   const iniciales = (partes[0][0] + partes[1][0]).toUpperCase();
   return iniciales;
 }
+
+/**
+ * Extrae el email real de una cadena que puede venir como "Nombre <email@dominio.com>"
+ */
+export function extraerEmail(input: string): string {
+  if (!input) return '';
+  const match = input.match(/<([^>]+)>/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return input.trim();
+}

@@ -7,7 +7,9 @@ interface TicketRow {
   numero_radicado: string;
   id_secretaria: string;
   nombre_ciudadano: string;
+  documento_ciudadano?: string | null;
   email_ciudadano: string | null;
+  telefono_ciudadano?: string | null;
   tipo_solicitud: string;
   asunto: string;
   contenido_raw: string;
@@ -27,7 +29,9 @@ export function mapRowToTicket(row: unknown) {
     numeroRadicado: r.numero_radicado,
     idSecretaria: r.id_secretaria,
     nombreCiudadano: r.nombre_ciudadano,
+    documentoCiudadano: r.documento_ciudadano,
     emailCiudadano: r.email_ciudadano,
+    telefonoCiudadano: r.telefono_ciudadano,
     tipoSolicitud: r.tipo_solicitud,
     asunto: r.asunto,
     contenidoRaw: r.contenido_raw,
