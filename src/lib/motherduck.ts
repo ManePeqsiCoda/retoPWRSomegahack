@@ -118,6 +118,23 @@ export async function ensureSchema(): Promise<void> {
       )
     `);
 
+    // Evolución de Schema: Añadir columnas si el tabla ya existía
+    try {
+      // DuckDB no tiene "ADD COLUMN IF NOT EXISTS" nativo en un solo paso estable
+      // Intentamos añadirlas; si ya existen, DuckDB fallará y capturamos el error
+      await query('ALTER TABLE tickets ADD COLUMN documento_ciudadano VARCHAR');
+      console.log('[MotherDuck] ✅ Columna documento_ciudadano añadida');
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    try {
+      await query('ALTER TABLE tickets ADD COLUMN telefono_ciudadano VARCHAR');
+      console.log('[MotherDuck] ✅ Columna telefono_ciudadano añadida');
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
     await query(`
       CREATE TABLE IF NOT EXISTS secretarias (
         id_secretaria       VARCHAR PRIMARY KEY,
