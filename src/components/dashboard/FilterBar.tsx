@@ -5,6 +5,7 @@ import { Search, X, RefreshCw } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { useFilterStore } from '@/store/filterStore';
 import { TicketEstado, TipoSolicitud, NivelUrgencia } from '@/types';
+import { cn } from '@/lib/utils';
 
 export default function FilterBar() {
   const {
