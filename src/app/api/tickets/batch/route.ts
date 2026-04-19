@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, ensureSchema } from '@/lib/motherduck';
 import { generarNumeroRadicado } from '@/lib/radicado';
+import { sendConfirmationEmail } from '@/services/emailService';
 
 interface ManualTicketInput {
   idSecretaria?: string;
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
       const numeroRadicado = generarNumeroRadicado(t.idSecretaria || 'sec-salud');
       const fechaCreacion = new Date().toISOString();
       const fechaLimite = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+      const nombreCiudadano = t.nombreCiudadano?.trim() || 'Ciudadano Anónimo';
 
       await query(
         `INSERT INTO tickets (
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
           idTicket,
           numeroRadicado,
           t.idSecretaria || 'sec-salud',
-          t.nombreCiudadano || 'Ciudadano Anónimo',
+          nombreCiudadano,
           t.emailCiudadano?.trim() || null,
           t.telefono?.trim() || null,
           t.tipoSolicitud || 'Peticion',
@@ -53,6 +55,23 @@ export async function POST(req: NextRequest) {
           fechaLimite
         ]
       );
+      
+      // 3. Enviar correo de confirmación si el ciudadano proporcionó email
+      const emailCiudadano = t.emailCiudadano?.trim();
+      if (emailCiudadano && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCiudadano)) {
+        try {
+          await sendConfirmationEmail(
+            emailCiudadano,
+            numeroRadicado,
+            nombreCiudadano,
+            t.contenidoRaw,
+            idTicket
+          );
+          console.log(`[Batch-Email] ✅ Confirmación enviada a ${emailCiudadano}`);
+        } catch (mailErr) {
+          console.error(`[Batch-Email] ❌ Fallo al enviar a ${emailCiudadano}:`, mailErr);
+        }
+      }
       
       results.push({ idTicket, numeroRadicado });
     }
