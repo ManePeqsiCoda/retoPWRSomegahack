@@ -80,14 +80,35 @@ export async function POST(req: NextRequest) {
     if (analisis.faltanDatos) {
       console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
       
-      // 1. Guardar en memoria para mantener continuidad cuando el usuario responda con los datos
+      // 1. Guardar en memoria para mantener continuidad
       MEMORIA_HILOS_MOCK[remitente] = {
         asunto: asunto || 'Sin asunto',
         cuerpoOriginal: cuerpo,
         nombre: nombreParaTicket
       };
 
-      // Enviamos correo pidiendo los datos, pero con el RADICADO REAL para que el usuario pueda seguirlo
+      // 2. PERSISTIR TAMBIÉN EN MOTHERDUCK (para que aparezca en la bandeja aunque esté incompleto)
+      try {
+        await query(
+          `INSERT INTO tickets (
+            id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
+            email_ciudadano, documento_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
+            resumen_ia, respuesta_sugerida, estado, canal_origen,
+            fecha_creacion, fecha_limite, fecha_actualizacion
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,now())`,
+          [
+            idTicket, numeroRadicadoReal, idSecretaria, nombreParaTicket, 
+            remitente, null, null, analisis.categoriaSugerida, 
+            asunto || 'Solicitud Incompleta', cuerpo, null, 
+            analisis.respuestaGenerada, 'Pendiente', 'Email',
+            new Date().toISOString(), new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
+          ]
+        );
+      } catch (dbErr) {
+        console.error('[MotherDuck] Error al persistir ticket incompleto:', dbErr);
+      }
+
+      // Enviamos correo pidiendo los datos
       await sendConfirmationEmail(
         remitente, 
         numeroRadicadoReal, 
@@ -151,7 +172,7 @@ export async function POST(req: NextRequest) {
           email_ciudadano, documento_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
           resumen_ia, respuesta_sugerida, estado, canal_origen,
           fecha_creacion, fecha_limite, fecha_actualizacion
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now())`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,now())`,
         [
           nuevoTicket.idTicket, nuevoTicket.numeroRadicado, nuevoTicket.idSecretaria,
           nuevoTicket.nombreCiudadano, nuevoTicket.emailCiudadano, null, null, nuevoTicket.tipoSolicitud,
