@@ -6,6 +6,7 @@ import { sendConfirmationEmail } from '@/services/emailService';
 interface ManualTicketInput {
   idSecretaria?: string;
   nombreCiudadano?: string;
+  documento?: string;
   emailCiudadano?: string;
   telefono?: string;
   tipoSolicitud?: string;
@@ -36,14 +37,15 @@ export async function POST(req: NextRequest) {
       await query(
         `INSERT INTO tickets (
           id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
-          email_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
+          documento_ciudadano, email_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
           estado, canal_origen, fecha_creacion, fecha_limite
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
         [
           idTicket,
           numeroRadicado,
           t.idSecretaria || 'sec-salud',
           nombreCiudadano,
+          t.documento?.trim() || null,
           t.emailCiudadano?.trim() || null,
           t.telefono?.trim() || null,
           t.tipoSolicitud || 'Peticion',

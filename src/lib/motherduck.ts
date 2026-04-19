@@ -102,6 +102,7 @@ export async function ensureSchema(): Promise<void> {
         numero_radicado   VARCHAR NOT NULL,
         id_secretaria     VARCHAR NOT NULL DEFAULT 'sec-salud',
         nombre_ciudadano  VARCHAR NOT NULL DEFAULT 'Ciudadano Anónimo',
+        documento_ciudadano VARCHAR,
         email_ciudadano   VARCHAR,
         telefono_ciudadano VARCHAR,
         tipo_solicitud    VARCHAR NOT NULL DEFAULT 'Peticion',

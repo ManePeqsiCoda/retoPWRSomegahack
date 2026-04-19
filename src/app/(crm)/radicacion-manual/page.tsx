@@ -21,6 +21,7 @@ import {
 interface ManualTicketForm {
   id: string; // ID temporal para manejo de estado
   nombreCiudadano: string;
+  documento: string;
   emailCiudadano: string;
   telefono: string;
   tipoSolicitud: string;
@@ -50,6 +51,7 @@ export default function RadicacionManualPage() {
     const newTicket: ManualTicketForm = {
       id: Math.random().toString(36).substr(2, 9),
       nombreCiudadano: '',
+      documento: '',
       emailCiudadano: '',
       telefono: '',
       tipoSolicitud: 'Peticion',
@@ -204,6 +206,20 @@ export default function RadicacionManualPage() {
                         className="w-full pl-11 pr-4 py-3 bg-gov-gray-50 dark:bg-dark-bg border border-gov-gray-200 dark:border-dark-border rounded-xl text-sm focus:ring-2 focus:ring-gov-blue-500 transition-all outline-none"
                         value={form.nombreCiudadano}
                         onChange={(e) => updateTicket(form.id, 'nombreCiudadano', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gov-gray-400 dark:text-dark-muted uppercase ml-1">Número de Documento</label>
+                    <div className="relative group">
+                      <ShieldCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gov-gray-300 group-focus-within:text-gov-blue-500 transition-colors" />
+                      <input 
+                        type="text"
+                        placeholder="CC / NIT / Pasaporte"
+                        className="w-full pl-11 pr-4 py-3 bg-gov-gray-50 dark:bg-dark-bg border border-gov-gray-200 dark:border-dark-border rounded-xl text-sm focus:ring-2 focus:ring-gov-blue-500 transition-all outline-none"
+                        value={form.documento}
+                        onChange={(e) => updateTicket(form.id, 'documento', e.target.value)}
                       />
                     </div>
                   </div>
