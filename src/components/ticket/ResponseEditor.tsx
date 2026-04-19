@@ -95,8 +95,8 @@ export default function ResponseEditor({
         </div>
         
         {respuestaSugerida && (
-          <div className="flex items-center gap-1.5 bg-gov-cyan-100 text-gov-cyan-500 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-gov-cyan-500/10">
-            <div className="w-1.5 h-1.5 bg-gov-cyan-400 rounded-full animate-pulse" />
+          <div className="flex items-center gap-1.5 bg-gov-cyan-100 dark:bg-dark-accent/10 text-gov-cyan-500 dark:text-dark-cyan px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-gov-cyan-500/10 dark:border-dark-cyan/20">
+            <div className="w-1.5 h-1.5 bg-gov-cyan-400 dark:bg-dark-cyan rounded-full animate-pulse" />
             Borrador IA disponible
           </div>
         )}

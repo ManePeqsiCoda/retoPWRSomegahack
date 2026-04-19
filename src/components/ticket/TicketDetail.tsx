@@ -90,7 +90,7 @@ export default function TicketDetail({
       {/* 1. CABECERA DEL TICKET */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-mono font-bold text-gov-gray-400 px-2 py-1 bg-gov-gray-100 rounded">
+          <span className="text-xs font-mono font-bold text-gov-gray-400 dark:text-dark-muted px-2 py-1 bg-gov-gray-100 dark:bg-dark-border rounded">
             {ticket.idTicket}
           </span>
           <StatusBadge estado={ticket.estado} />
