@@ -50,7 +50,7 @@ export default function TicketRow({ ticket, onRowClick }: TicketRowProps) {
       </td>
 
       {/* 2. ID / Canal */}
-      <td className="py-4 px-3 w-40">
+      <td className="py-4 px-3 w-40 hidden lg:table-cell">
         <div className="flex flex-col gap-1">
           <RadicadoBadge 
             numeroRadicado={ticket.numeroRadicado} 
@@ -81,7 +81,7 @@ export default function TicketRow({ ticket, onRowClick }: TicketRowProps) {
       </td>
 
       {/* 5. Urgencia Completa */}
-      <td className="py-4 px-3 w-36">
+      <td className="py-4 px-3 w-36 hidden md:table-cell">
         <UrgencyBadge 
           nivelUrgencia={ticket.nivelUrgencia} 
           diasRestantes={ticket.diasRestantes} 
@@ -89,7 +89,7 @@ export default function TicketRow({ ticket, onRowClick }: TicketRowProps) {
       </td>
 
       {/* 6. Fecha Creación */}
-      <td className="py-4 px-3 w-32 border-transparent">
+      <td className="py-4 px-3 w-32 border-transparent hidden sm:table-cell">
         <span className="text-xs text-gov-gray-500 dark:text-dark-muted font-medium">
           {formatearFecha(ticket.fechaCreacion)}
         </span>

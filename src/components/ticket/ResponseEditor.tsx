@@ -207,12 +207,12 @@ export default function ResponseEditor({
       )}
 
       {/* 5. BARRA DE ACCIONES */}
-      <div className="flex items-center justify-between border-t border-gov-gray-100 dark:border-dark-border pt-6">
-        <div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-t border-gov-gray-100 dark:border-dark-border pt-6 gap-4">
+        <div className="flex justify-start">
           {respuestaSugerida !== null && hasUnsavedChanges && !submitSuccess && (
             <button
               onClick={onReset}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-gov-blue-700 hover:bg-gov-blue-50 rounded-lg transition-all border border-gov-blue-200"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-gov-blue-700 hover:bg-gov-blue-50 rounded-lg transition-all border border-gov-blue-200 dark:border-dark-cyan/20 dark:text-dark-cyan"
               title="Restaurar a la sugerencia original de la IA"
             >
               <RotateCcw size={14} />
@@ -221,9 +221,9 @@ export default function ResponseEditor({
           )}
         </div>
 
-        <div className="flex items-center gap-5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-5">
           {hasUnsavedChanges && !submitSuccess && !isSubmitting && (
-            <span className="text-[11px] font-bold text-sem-yellow uppercase animate-pulse">
+            <span className="text-[10px] sm:text-[11px] font-bold text-sem-yellow uppercase animate-pulse text-center">
               Cambios sin guardar
             </span>
           )}
@@ -232,7 +232,7 @@ export default function ResponseEditor({
             onClick={onOpenConfirmModal}
             disabled={isSubmitting || isTooShort || isEmpty}
             className={cn(
-              "flex items-center gap-3 px-8 py-3 rounded-xl font-bold text-sm transition-all shadow-lg",
+              "flex items-center justify-center gap-3 px-8 py-3.5 sm:py-3 rounded-xl font-bold text-sm transition-all shadow-lg",
               (isSubmitting || isTooShort || isEmpty)
                 ? "bg-gov-gray-300 text-gov-gray-500 cursor-not-allowed shadow-none"
                 : "bg-gov-blue-700 hover:bg-gov-blue-900 text-white hover:scale-[1.02] active:scale-[0.98] shadow-gov-blue-900/20"

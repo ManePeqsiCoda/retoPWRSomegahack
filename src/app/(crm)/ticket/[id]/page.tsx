@@ -78,7 +78,7 @@ export default function TicketDetailPage() {
         </section>
 
         {/* Columna Derecha: Editor de Respuesta */}
-        <section className="sticky top-6">
+        <section className="lg:sticky lg:top-6">
           <ResponseEditor
             ticket={ticket}
             respuestaActual={respuestaActual}

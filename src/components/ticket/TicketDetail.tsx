@@ -58,25 +58,27 @@ export default function TicketDetail({
     <div className="flex flex-col gap-8">
       {/* ── RADICADO OFICIAL ── */}
       <div
-        className="rounded-xl p-4 mb-4 flex items-center justify-between gap-4"
+        className="rounded-xl p-4 md:p-6 mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-gov-blue-900/10"
         style={{ background: 'linear-gradient(135deg, #001E4E 0%, #003DA5 100%)' }}
       >
         <div className="min-w-0">
-          <p className="text-gov-cyan-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
+          <p className="text-gov-cyan-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-1.5 opacity-80">
             Número de Radicado Oficial · Ley 1755 de 2015
           </p>
-          <RadicadoBadge
-            numeroRadicado={ticket.numeroRadicado}
-            variant="full"
-            size="lg"
-            copyable={true}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <RadicadoBadge
+              numeroRadicado={ticket.numeroRadicado}
+              variant="full"
+              size="lg"
+              copyable={true}
+            />
+          </div>
         </div>
 
-        <div className="text-right flex-shrink-0">
-          <p className="text-white/50 text-[10px] uppercase tracking-wide">Contacto</p>
+        <div className="sm:text-right flex-shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
+          <p className="text-white/50 text-[10px] uppercase tracking-wide">Contacto del Ciudadano</p>
           {ticket.emailCiudadano ? (
-            <p className="text-gov-cyan-400 text-xs font-mono mt-0.5 break-all">
+            <p className="text-gov-cyan-400 text-xs md:text-sm font-mono mt-0.5 break-all">
               {ticket.emailCiudadano}
             </p>
           ) : (

@@ -51,21 +51,21 @@ export default function Sidebar() {
 
   return (
     <nav
-      className="flex flex-col h-screen w-64 bg-gov-blue-900 border-r border-gov-blue-700 shrink-0 dark:bg-dark-sidebar dark:border-dark-border"
+      className="flex flex-col h-full w-64 bg-gov-blue-900 border-r border-gov-blue-700 shrink-0 dark:bg-dark-sidebar dark:border-dark-border"
       aria-label="Navegación principal"
     >
       {/* Header */}
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center justify-center w-10 h-10 bg-white/10 rounded-lg">
-            {/* TODO: Reemplazar con escudo SVG oficial de la Alcaldía de Medellín */}
+          <div className="flex items-center justify-center w-9 h-9 md:w-10 md:h-10 bg-white/10 rounded-lg">
+            {/* Escudo SVG Medellín (Emoji placeholder) */}
             <span className="text-xl" role="img" aria-label="Escudo Medellín">🏛️</span>
           </div>
-          <div>
-            <h1 className="text-white font-bold text-sm leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-white font-bold text-xs md:text-sm leading-tight truncate">
               Alcaldía de Medellín
             </h1>
-            <p className="text-gov-cyan-400 text-xs font-medium uppercase tracking-wider">
+            <p className="text-gov-cyan-400 text-[9px] md:text-[10px] font-bold uppercase tracking-wider truncate">
               CRM PQRSD
             </p>
           </div>
@@ -74,7 +74,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 px-4 space-y-1">
+      <div className="flex-1 px-3 md:px-4 space-y-1 overflow-y-auto">
         <NavItem
           icon={LayoutDashboard}
           label="Bandeja de Entrada"
@@ -96,13 +96,13 @@ export default function Sidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-6 mt-auto space-y-4">
+      <div className="p-4 md:p-6 mt-auto space-y-4">
         <div className="px-3 py-1.5 bg-gov-blue-700/50 rounded-full inline-block dark:bg-dark-accent/20">
-          <span className="text-gov-cyan-400 text-xs font-semibold dark:text-dark-cyan">
+          <span className="text-gov-cyan-400 text-[10px] md:text-xs font-semibold dark:text-dark-cyan truncate block max-w-[180px]">
             {usuario?.secretariaNombre || 'Secretaría de Salud'}
           </span>
         </div>
-        <div className="text-gov-gray-500 text-xs font-medium dark:text-dark-muted">
+        <div className="text-gov-gray-500 text-[10px] md:text-xs font-medium dark:text-dark-muted">
           v1.0 · OmegaHack 2026
         </div>
       </div>

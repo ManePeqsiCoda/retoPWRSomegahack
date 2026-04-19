@@ -77,18 +77,19 @@ export default function TicketTable() {
       {/* 3. Contenido Principal (Tabla o Kanban) */}
       {vista === 'tabla' ? (
         <div className="bg-white rounded-xl border border-gov-gray-100 shadow-sm overflow-hidden dark:bg-dark-surface dark:border-dark-border">
-          <table className="w-full border-collapse text-left">
-            <thead className="bg-gov-gray-50 text-[10px] sm:text-xs font-bold text-gov-gray-500 uppercase tracking-widest border-b border-gov-gray-100 dark:bg-dark-sidebar dark:border-dark-border dark:text-dark-muted">
-              <tr>
-                <th className="py-4 pl-4 w-12"></th>
-                <th className="py-4 px-3 w-40">ID / Canal</th>
-                <th className="py-4 px-3">Ciudadano / Tipo</th>
-                <th className="py-4 px-3">Estado</th>
-                <th className="py-4 px-3 w-36">Urgencia</th>
-                <th className="py-4 px-3 w-32">Fecha</th>
-                <th className="py-4 pr-4 w-8"></th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto overflow-y-hidden">
+            <table className="w-full border-collapse text-left min-w-[600px] md:min-w-0">
+              <thead className="bg-gov-gray-50 text-[10px] sm:text-xs font-bold text-gov-gray-500 uppercase tracking-widest border-b border-gov-gray-100 dark:bg-dark-sidebar dark:border-dark-border dark:text-dark-muted">
+                <tr>
+                  <th className="py-4 pl-4 w-12"></th>
+                  <th className="py-4 px-3 w-40 hidden lg:table-cell">ID / Canal</th>
+                  <th className="py-4 px-3">Ciudadano / Tipo</th>
+                  <th className="py-4 px-3">Estado</th>
+                  <th className="py-4 px-3 w-36 hidden md:table-cell">Urgencia</th>
+                  <th className="py-4 px-3 w-32 hidden sm:table-cell">Fecha</th>
+                  <th className="py-4 pr-4 w-8"></th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-gov-gray-100 dark:divide-dark-border">
               {isLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
@@ -125,6 +126,7 @@ export default function TicketTable() {
             </tbody>
           </table>
         </div>
+      </div>
       ) : (
         <div className="bg-transparent">
           {isLoading ? (
