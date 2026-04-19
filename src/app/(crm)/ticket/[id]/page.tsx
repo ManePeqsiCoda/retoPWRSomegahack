@@ -29,7 +29,6 @@ export default function TicketDetailPage() {
     closeConfirmModal,
     confirmarYEnviar,
     setRespuestaActual,
-    submitRespuesta,
     resetRespuesta,
   } = useTicketDetail(idTicket);
 
