@@ -30,6 +30,7 @@ export default function TicketDetailPage() {
     confirmarYEnviar,
     setRespuestaActual,
     resetRespuesta,
+    cambiarEstado,
   } = useTicketDetail(idTicket);
 
   // 1. ESTADO DE CARGA
@@ -74,6 +75,8 @@ export default function TicketDetailPage() {
             ticket={ticket}
             resumenCargando={resumenCargando}
             resumenError={resumenError}
+            onCambiarEstado={cambiarEstado}
+            isSubmitting={isSubmitting}
           />
         </section>
 

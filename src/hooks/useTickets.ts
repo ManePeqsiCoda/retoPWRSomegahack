@@ -20,6 +20,7 @@ export function useTickets(): UseTicketsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const idSecretaria = useIdSecretariaActivo();
+  const dataMode = useAuthStore(s => s.dataMode);
   const { 
     estadoFilter, 
     tipoFilter, 
@@ -45,7 +46,7 @@ export function useTickets(): UseTicketsReturn {
     };
 
     try {
-      const response = await getTicketsBySecretaria(idSecretaria, filters);
+      const response = await getTicketsBySecretaria(idSecretaria, dataMode, filters);
 
       if (response.error) {
         setError(response.error);
@@ -79,7 +80,7 @@ export function useTickets(): UseTicketsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [idSecretaria, estadoFilter, tipoFilter, urgenciaFilter, searchQuery]);
+  }, [idSecretaria, dataMode, estadoFilter, tipoFilter, urgenciaFilter, searchQuery]);
 
   // Refrescar automáticamente cuando los filtros cambian
   useEffect(() => {

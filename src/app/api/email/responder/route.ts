@@ -42,8 +42,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 });
     }
 
-    // Generar tracking URL
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm-pqrsd.vercel.app').replace(/\/+$/, '');
+    // Generar tracking URL - Limpiar de posibles subrutas accidentales
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm-pqrsd.vercel.app')
+      .replace(/\/dashboard\/?$/, '')
+      .replace(/\/+$/, '');
+      
     const trackingUrl = body.idTicket ? `${appUrl}/seguimiento/${body.idTicket}` : null;
 
     // Generar template HTML

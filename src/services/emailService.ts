@@ -184,7 +184,11 @@ export async function sendConfirmationEmail(
 ): Promise<EmailSendResult> {
   const transporter = getEmailTransporter();
   const subject = `Confirmación de Recibido - PQRSD Radicado: ${numeroRadicado}`;
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm-pqrsd.vercel.app').replace(/\/+$/, '');
+  // Limpiar appUrl de posibles subrutas como /dashboard o slashes finales que rompan el ruteo
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm-pqrsd.vercel.app')
+    .replace(/\/dashboard\/?$/, '') 
+    .replace(/\/+$/, '');
+
   const trackingUrl = idTicket ? `${appUrl}/seguimiento/${idTicket}` : null;
   
   const html = `

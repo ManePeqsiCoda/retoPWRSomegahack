@@ -153,6 +153,9 @@ async function mockActualizarRespuesta(
     throw new Error('No tienes permisos para responder este ticket');
   }
 
+  ticket.respuestaSugerida = respuestaFinal;
+  ticket.estado = 'Resuelto';
+
   return { data: { success: true }, total: 1, timestamp: new Date().toISOString() };
 }
 
@@ -179,18 +182,20 @@ export function setServiceDataMode(mode: DataMode) {
 
 export async function getTicketsBySecretaria(
   idSecretaria: string,
+  mode: DataMode,
   filters?: TicketsFilter
 ): Promise<ApiResponse<Ticket[]>> {
-  return _currentDataMode === 'live'
+  return mode === 'live'
     ? liveGetTickets(idSecretaria, filters)
     : mockGetTickets(idSecretaria, filters);
 }
 
 export async function getTicketById(
   idTicket: string,
-  idSecretaria: string
+  idSecretaria: string,
+  mode: DataMode
 ): Promise<ApiResponse<Ticket | null>> {
-  return _currentDataMode === 'live'
+  return mode === 'live'
     ? liveGetTicketById(idTicket, idSecretaria)
     : mockGetTicketById(idTicket, idSecretaria);
 }
@@ -198,9 +203,10 @@ export async function getTicketById(
 export async function actualizarRespuesta(
   idTicket: string,
   respuestaFinal: string,
-  idSecretaria: string
+  idSecretaria: string,
+  mode: DataMode
 ): Promise<ApiResponse<{ success: boolean }>> {
-  return _currentDataMode === 'live'
+  return mode === 'live'
     ? liveActualizarRespuesta(idTicket, respuestaFinal, idSecretaria)
     : mockActualizarRespuesta(idTicket, respuestaFinal, idSecretaria);
 }
@@ -216,9 +222,10 @@ export async function getSecretarias(): Promise<ApiResponse<Secretaria[]>> {
 
 export async function actualizarEstadoTicket(
   idTicket: string,
-  nuevoEstado: TicketEstado
+  nuevoEstado: TicketEstado,
+  mode: DataMode
 ): Promise<void> {
-  return _currentDataMode === 'live'
+  return mode === 'live'
     ? liveActualizarEstado(idTicket, nuevoEstado)
     : mockActualizarEstado(idTicket, nuevoEstado);
 }

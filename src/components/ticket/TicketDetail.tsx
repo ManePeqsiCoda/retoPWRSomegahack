@@ -24,6 +24,8 @@ interface TicketDetailProps {
   resumenCargando?: boolean;
   /** Fallo al generar resumen en vivo; el texto mostrado puede ser el mock. */
   resumenError?: string | null;
+  onCambiarEstado?: (nuevo: any) => void;
+  isSubmitting?: boolean;
 }
 
 const CanalEntry = ({ canal }: { canal: CanalOrigen }) => {
@@ -91,12 +93,29 @@ export default function TicketDetail({
 
       {/* 1. CABECERA DEL TICKET */}
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-mono font-bold text-gov-gray-400 dark:text-dark-muted px-2 py-1 bg-gov-gray-100 dark:bg-dark-border rounded">
-            {ticket.idTicket}
-          </span>
-          <StatusBadge estado={ticket.estado} />
-          <UrgencyBadge nivelUrgencia={ticket.nivelUrgencia} diasRestantes={ticket.diasRestantes} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-mono font-bold text-gov-gray-400 dark:text-dark-muted px-2 py-1 bg-gov-gray-100 dark:bg-dark-border rounded">
+              {ticket.idTicket}
+            </span>
+            <StatusBadge estado={ticket.estado} />
+            <UrgencyBadge nivelUrgencia={ticket.nivelUrgencia} diasRestantes={ticket.diasRestantes} />
+          </div>
+
+          {ticket.estado === 'Pendiente' && onCambiarEstado && (
+            <button
+              onClick={() => onCambiarEstado('En_Revision')}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-4 py-2 bg-gov-blue-100 hover:bg-gov-blue-200 text-gov-blue-700 dark:bg-dark-accent/10 dark:hover:bg-dark-accent/20 dark:text-dark-cyan text-xs font-black uppercase tracking-widest rounded-lg transition-all border border-gov-blue-200 dark:border-dark-cyan/30"
+            >
+              {isSubmitting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <ShieldCheck size={14} />
+              )}
+              Comenzar Revisión
+            </button>
+          )}
         </div>
         
         <div>

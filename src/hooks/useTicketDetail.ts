@@ -45,6 +45,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
   const [emailSendResult,    setEmailSendResult]    = useState<EmailSendResult | null>(null);
 
   const { enviarRespuestaOficial, isSendingRespuesta, error: emailErrorRaw } = useEmailSender();
+  const dataMode = useAuthStore(s => s.dataMode);
 
   const idSecretariaActivo = useIdSecretariaActivo();
   const usuario = useAuthStore((s) => s.usuario);
@@ -60,7 +61,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
       setError(null);
 
       try {
-        const response = await getTicketById(idTicket, idSecretariaActivo);
+        const response = await getTicketById(idTicket, idSecretariaActivo, dataMode);
 
         if (response.error) {
           if (response.error === 'ACCESO_DENEGADO') {
@@ -85,7 +86,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     }
 
     loadTicket();
-  }, [idTicket, idSecretariaActivo]);
+  }, [idTicket, idSecretariaActivo, dataMode]);
 
   // Resumen ejecutivo GovTech vía gateway (mismo criterio que el panel IA)
   useEffect(() => {
@@ -191,7 +192,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
 
     try {
       // 1. Guardar localmente (en el mock/DB)
-      const response = await actualizarRespuesta(idTicket, trimmedRespuesta, idSecretariaActivo);
+      const response = await actualizarRespuesta(idTicket, trimmedRespuesta, idSecretariaActivo, dataMode);
       
       if (response.error) {
         setError(response.error);
@@ -236,7 +237,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [ticket, idTicket, idSecretariaActivo, respuestaActual, usuario, enviarRespuestaOficial]);
+  }, [ticket, idTicket, idSecretariaActivo, dataMode, respuestaActual, usuario, enviarRespuestaOficial]);
 
   // 3. Resetear cambios
   const resetRespuesta = useCallback(() => {
@@ -247,6 +248,20 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
 
   // 4. Detección de cambios sin guardar
   const hasUnsavedChanges = respuestaActual !== (ticket?.respuestaSugerida ?? '');
+
+  const cambiarEstado = useCallback(async (nuevoEstado: any) => {
+    if (!ticket || !idSecretariaActivo) return;
+    setIsSubmitting(true);
+    try {
+      const { actualizarEstadoTicket } = await import('@/services/ticketService');
+      await actualizarEstadoTicket(ticket.idTicket, nuevoEstado, dataMode);
+      setTicket(curr => curr ? { ...curr, estado: nuevoEstado } : null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [ticket, idSecretariaActivo, dataMode]);
 
   return {
     ticket,
@@ -268,5 +283,6 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     setRespuestaActual,
     submitRespuesta,
     resetRespuesta,
+    cambiarEstado,
   };
 }
