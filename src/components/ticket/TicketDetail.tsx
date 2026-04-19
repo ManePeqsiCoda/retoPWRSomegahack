@@ -14,7 +14,6 @@ import { formatearFecha } from '@/lib/utils';
 import { StatusBadge } from '../shared';
 import { UrgencyBadge } from '../dashboard';
 import { cn } from '@/lib/utils';
-import { SECRETARIAS_MOCK } from '@/services/mockData';
 import RadicadoBadge from './RadicadoBadge';
 import EmailStatusTracker from './EmailStatusTracker';
 
@@ -57,7 +56,7 @@ export default function TicketDetail({
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [editNombre, setEditNombre] = useState(ticket.nombreCiudadano);
   const [editEmail, setEditEmail] = useState(ticket.emailCiudadano || '');
-  const [editTelefono, setEditTelefono] = useState(ticket.telefonoCiudadano || '');
+  const [editTelefono] = useState(ticket.telefonoCiudadano || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleSaveContact = async () => {
@@ -66,8 +65,8 @@ export default function TicketDetail({
     try {
       await onActualizarCiudadano(editNombre, editEmail, editTelefono);
       setIsEditingContact(false);
-    } catch (e) {
-      alert('Error al actualizar contacto: ' + (e instanceof Error ? e.message : 'Desconocido'));
+    } catch (_e) {
+      alert('Error al actualizar contacto: ' + (_e instanceof Error ? _e.message : 'Desconocido'));
     } finally {
       setIsUpdating(false);
     }
