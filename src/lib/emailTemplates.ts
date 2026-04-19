@@ -174,6 +174,7 @@ export function generateRespuestaTemplate(data: {
   cargoFuncionario:  string;
   fechaRespuesta:   string;
   textoRespuesta:   string;
+  trackingUrl?:     string | null;
 }): { subject: string; html: string; text: string } {
   const subject = `[Radicado ${data.numeroRadicado}] Respuesta oficial a su ${data.tipoSolicitud}`;
 
@@ -232,6 +233,15 @@ export function generateRespuestaTemplate(data: {
                   <div style="background-color: ${C.blanco}; border: 1px solid ${C.borde}; border-radius: 6px; padding: 24px; margin-bottom: 24px;">
                     <div style="font-size: 14px; line-height: 1.8; color: ${C.textoPrinc}; white-space: pre-wrap;">${data.textoRespuesta}</div>
                   </div>
+
+                  ${data.trackingUrl ? `
+                  <div style="text-align: center; margin: 24px 0;">
+                    <a href="${data.trackingUrl}" 
+                       style="display: inline-block; background-color: ${C.azulMedio}; color: ${C.blanco}; font-weight: bold; font-size: 14px; padding: 14px 32px; border-radius: 8px; text-decoration: none; letter-spacing: 0.5px;">
+                      📋 Ver detalles del trámite
+                    </a>
+                  </div>
+                  ` : ''}
 
                   <table border="0" cellpadding="8" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 24px; font-size: 12px; background-color: ${C.fondo}; border-radius: 6px;">
                     <tr>

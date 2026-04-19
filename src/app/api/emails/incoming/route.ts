@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generarNumeroRadicado } from '@/lib/radicado';
 import { procesarCorreoConIA } from '@/services/iaTemplateService';
 import { sendConfirmationEmail } from '@/services/emailService';
-import { TICKETS_MOCK, MEMORIA_HILOS_MOCK } from '@/services/mockData';
+import { MEMORIA_HILOS_MOCK } from '@/services/mockData';
 import { Ticket } from '@/types';
 import { query, ensureSchema } from '@/lib/motherduck';
 
@@ -89,12 +89,25 @@ export async function POST(req: NextRequest) {
       canalOrigen: 'Email',
     };
 
-    // PERSISTIR EN MOCK (para usuario de prueba)
-    TICKETS_MOCK.unshift(nuevoTicket);
-
     // PERSISTIR EN MOTHERDUCK (para usuario admin / datos reales)
     try {
       await ensureSchema();
+
+      // Deduplicación: Verificar si en el último minuto ya entró un ticket igual (previene reintentos de webhooks como Zapier/Make)
+      const duplicateCheck = await query<{ cnt: number }>(
+        `SELECT COUNT(*) as cnt FROM tickets 
+         WHERE email_ciudadano = $1 
+         AND asunto = $2 
+         AND fecha_creacion > now() - interval '2 minutes'`,
+        [nuevoTicket.emailCiudadano, nuevoTicket.asunto]
+      );
+      
+      const count = Number(duplicateCheck[0]?.cnt || 0);
+      if (count > 0) {
+        console.log(`[MotherDuck] ⚠️ Ticket duplicado detectado para ${remitente}, ignorando.`);
+        return NextResponse.json({ success: true, duplicated: true, message: 'Ticket ya procesado recientemente' });
+      }
+
       await query(
         `INSERT INTO tickets (
           id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,

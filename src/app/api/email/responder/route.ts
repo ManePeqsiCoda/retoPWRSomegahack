@@ -42,6 +42,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Formato de email inválido' }, { status: 400 });
     }
 
+    // Generar tracking URL
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://crm-pqrsd.vercel.app').replace(/\/+$/, '');
+    const trackingUrl = body.idTicket ? `${appUrl}/seguimiento/${body.idTicket}` : null;
+
     // Generar template HTML
     const { subject, html, text } = generateRespuestaTemplate({
       nombreCiudadano:  body.nombreCiudadano,
@@ -52,6 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       cargoFuncionario:  body.cargoFuncionario,
       fechaRespuesta:   body.fechaRespuesta,
       textoRespuesta:   body.textoRespuesta,
+      trackingUrl,
     });
 
     // Enviar vía el transporter configurado (mock o Gmail)
