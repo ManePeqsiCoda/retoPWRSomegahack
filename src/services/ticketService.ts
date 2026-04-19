@@ -12,89 +12,175 @@ import {
 } from '@/types';
 import { DataMode } from '@/store/authStore';
 
+function buildTicketsQuery(idSecretaria: string, filters?: TicketsFilter): string {
+  const sp = new URLSearchParams({ idSecretaria });
+  if (filters?.estado && filters.estado !== 'Todos') sp.set('estado', filters.estado);
+  if (filters?.tipoSolicitud && filters.tipoSolicitud !== 'Todos') {
+    sp.set('tipoSolicitud', filters.tipoSolicitud);
+  }
+  if (filters?.searchQuery?.trim()) sp.set('searchQuery', filters.searchQuery.trim());
+  return `/api/crm/tickets?${sp.toString()}`;
+}
+
 // ──────────────────────────────────────────────────
-// CAPA LIVE: llamadas a los API Routes internos
+// CAPA LIVE: API CRM (DuckDB o mock vía /api/crm)
 // ──────────────────────────────────────────────────
 
 async function liveGetTickets(
   idSecretaria: string,
   filters?: TicketsFilter
 ): Promise<ApiResponse<Ticket[]>> {
-  const params = new URLSearchParams();
-  params.set('idSecretaria', idSecretaria);
-  if (filters?.estado && filters.estado !== 'Todos') params.set('estado', filters.estado);
-  if (filters?.tipoSolicitud && filters.tipoSolicitud !== 'Todos') params.set('tipo', filters.tipoSolicitud);
-  if (filters?.searchQuery) params.set('search', filters.searchQuery);
+  try {
+    await new Promise((resolve) => setTimeout(resolve, DELAY_SIMULADO_MS));
 
-  const res = await fetch(`/api/tickets?${params.toString()}`);
-  const json = await res.json();
+    const res = await fetch(buildTicketsQuery(idSecretaria, filters), {
+      cache: 'no-store',
+    });
+    const json = (await res.json()) as ApiResponse<Ticket[]> & { error?: string };
 
-  if (!res.ok) {
-    return { data: [], total: 0, timestamp: new Date().toISOString(), error: json.error || 'Error de red' };
+    if (!res.ok) {
+      return {
+        data: [],
+        total: 0,
+        timestamp: new Date().toISOString(),
+        error: json.error ?? `Error ${res.status}`,
+      };
+    }
+
+    return {
+      data: json.data ?? [],
+      total: json.total ?? 0,
+      timestamp: json.timestamp ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    return {
+      data: [],
+      total: 0,
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
   }
-
-  return json;
 }
 
 async function liveGetTicketById(
   idTicket: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _idSecretaria: string
+  idSecretariaUsuario: string
 ): Promise<ApiResponse<Ticket | null>> {
-  const res = await fetch(`/api/tickets/${idTicket}`);
-  const json = await res.json();
+  try {
+    await new Promise((resolve) => setTimeout(resolve, DELAY_SIMULADO_MS));
 
-  if (!res.ok) {
+    const sp = new URLSearchParams({ idSecretaria: idSecretariaUsuario });
+    const res = await fetch(
+      `/api/crm/tickets/${encodeURIComponent(idTicket)}?${sp}`,
+      { cache: 'no-store' }
+    );
+    const json = (await res.json()) as ApiResponse<Ticket | null> & { error?: string };
+
+    if (res.status === 403) {
+      return {
+        data: null,
+        total: 0,
+        timestamp: new Date().toISOString(),
+        error: 'ACCESO_DENEGADO',
+      };
+    }
+    if (res.status === 404) {
+      return {
+        data: null,
+        total: 0,
+        timestamp: new Date().toISOString(),
+        error: 'NOT_FOUND',
+      };
+    }
+    if (!res.ok) {
+      return {
+        data: null,
+        total: 0,
+        timestamp: new Date().toISOString(),
+        error: json.error ?? `Error ${res.status}`,
+      };
+    }
+
+    return {
+      data: json.data ?? null,
+      total: json.total ?? 0,
+      timestamp: json.timestamp ?? new Date().toISOString(),
+    };
+  } catch (error) {
     return {
       data: null,
       total: 0,
       timestamp: new Date().toISOString(),
-      error: json.error || 'NOT_FOUND',
+      error: error instanceof Error ? error.message : 'Error en el servidor',
     };
   }
-
-  return json;
 }
 
 async function liveActualizarRespuesta(
   idTicket: string,
   respuestaFinal: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _idSecretaria: string
+  idSecretariaUsuario: string
 ): Promise<ApiResponse<{ success: boolean }>> {
-  const res = await fetch(`/api/tickets/${idTicket}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      respuestaSugerida: respuestaFinal,
-      estado: 'Resuelto',
-    }),
-  });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, DELAY_SIMULADO_MS));
 
-  const json = await res.json();
-  return {
-    data: { success: res.ok },
-    total: res.ok ? 1 : 0,
-    timestamp: new Date().toISOString(),
-    error: res.ok ? undefined : json.error,
-  };
+    const res = await fetch(`/api/crm/tickets/${encodeURIComponent(idTicket)}/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        respuestaFinal,
+        idSecretaria: idSecretariaUsuario,
+      }),
+      cache: 'no-store',
+    });
+    const json = (await res.json()) as ApiResponse<{ success: boolean }> & { error?: string };
+
+    if (!res.ok) {
+      return {
+        data: { success: false },
+        total: 0,
+        timestamp: new Date().toISOString(),
+        error: json.error ?? `Error ${res.status}`,
+      };
+    }
+
+    return {
+      data: json.data ?? { success: true },
+      total: json.total ?? 1,
+      timestamp: json.timestamp ?? new Date().toISOString(),
+      error: json.error,
+    };
+  } catch (error) {
+    return {
+      data: { success: false },
+      total: 0,
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Error al procesar respuesta',
+    };
+  }
 }
 
 async function liveActualizarEstado(
   idTicket: string,
-  nuevoEstado: TicketEstado
+  nuevoEstado: TicketEstado,
+  idSecretariaUsuario: string
 ): Promise<void> {
-  const res = await fetch(`/api/tickets/${idTicket}`, {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+
+  const res = await fetch(`/api/crm/tickets/${encodeURIComponent(idTicket)}/state`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ estado: nuevoEstado }),
+    body: JSON.stringify({ idSecretaria: idSecretariaUsuario, estado: nuevoEstado }),
+    cache: 'no-store',
   });
-
-  if (!res.ok) throw new Error('Error al actualizar estado');
+  if (!res.ok) {
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(j.error ?? `HTTP ${res.status}`);
+  }
 }
 
 // ──────────────────────────────────────────────────
-// CAPA MOCK: datos locales (original)
+// CAPA MOCK: datos locales
 // ──────────────────────────────────────────────────
 
 async function mockGetTickets(
@@ -205,7 +291,6 @@ export async function actualizarRespuesta(
 }
 
 export async function getSecretarias(): Promise<ApiResponse<Secretaria[]>> {
-  // Secretarías always from mock (static catalog)
   return {
     data: SECRETARIAS_MOCK,
     total: SECRETARIAS_MOCK.length,
@@ -216,9 +301,10 @@ export async function getSecretarias(): Promise<ApiResponse<Secretaria[]>> {
 export async function actualizarEstadoTicket(
   idTicket: string,
   nuevoEstado: TicketEstado,
+  idSecretaria: string,
   mode: DataMode
 ): Promise<void> {
   return mode === 'live'
-    ? liveActualizarEstado(idTicket, nuevoEstado)
+    ? liveActualizarEstado(idTicket, nuevoEstado, idSecretaria)
     : mockActualizarEstado(idTicket, nuevoEstado);
 }

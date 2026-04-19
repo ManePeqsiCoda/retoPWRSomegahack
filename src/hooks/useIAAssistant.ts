@@ -35,6 +35,8 @@ export function useIAAssistant({ ticket, onRespuestaGenerada }: UseIAAssistantPr
   /** Segundos transcurridos mientras el fetch está en curso (no hay streaming). */
   const [generacionSegundos, setGeneracionSegundos] = useState(0);
   const [ultimaDuracionMs, setUltimaDuracionMs] = useState<number | null>(null);
+  /** true cuando el servidor rechazó la instrucción (sin LLM); no se aplica al editor. */
+  const [instruccionRechazada, setInstruccionRechazada] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const { usuario } = useAuthStore();
@@ -66,6 +68,7 @@ export function useIAAssistant({ ticket, onRespuestaGenerada }: UseIAAssistantPr
     setIsGenerating(true);
     setTextoEnStream('');
     setError(null);
+    setInstruccionRechazada(false);
     setTokensUsados(0);
     setUltimaDuracionMs(null);
 
@@ -97,6 +100,7 @@ export function useIAAssistant({ ticket, onRespuestaGenerada }: UseIAAssistantPr
           error?: string;
           detail?: string;
           text?: string;
+          invalid_request?: boolean;
           elapsed_ms?: number;
           usage_tokens?: { total_tokens?: number; input_tokens?: number; output_tokens?: number };
         };
@@ -108,6 +112,13 @@ export function useIAAssistant({ ticket, onRespuestaGenerada }: UseIAAssistantPr
           throw new Error('Respuesta vacía del asistente');
         }
         setTextoEnStream(t);
+        if (data.invalid_request === true) {
+          setInstruccionRechazada(true);
+          setTokensUsados(0);
+          setUltimaDuracionMs(0);
+          return;
+        }
+        setInstruccionRechazada(false);
         const tok = data.usage_tokens?.total_tokens;
         setTokensUsados(
           typeof tok === 'number' && tok > 0 ? tok : Math.max(1, Math.ceil(t.length / 4))
@@ -179,6 +190,7 @@ export function useIAAssistant({ ticket, onRespuestaGenerada }: UseIAAssistantPr
     isGenerating,
     textoEnStream,
     error,
+    instruccionRechazada,
     tokensUsados,
     generacionSegundos,
     ultimaDuracionMs,

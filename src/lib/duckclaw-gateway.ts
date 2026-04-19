@@ -31,6 +31,79 @@ export function responseTextFromGatewayPayload(payload: GatewayChatPayload): str
   return '';
 }
 
+export type GatewayDbWritePayload = {
+  query: string;
+  params?: unknown[];
+  user_id: string;
+  db_path: string;
+  tenant_id?: string;
+};
+
+export type GatewayDbReadPayload = GatewayDbWritePayload;
+
+/** Encola escritura DuckDB vía API Gateway (db-writer). */
+export async function postGatewayDbWrite(
+  base: string,
+  body: GatewayDbWritePayload
+): Promise<{ ok: boolean; status: number; taskId?: string; detail?: string }> {
+  const res = await fetch(`${base}/api/v1/db/write`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: body.query,
+      params: body.params ?? [],
+      user_id: body.user_id,
+      db_path: body.db_path,
+      tenant_id: body.tenant_id ?? 'PQRS',
+    }),
+    cache: 'no-store',
+  });
+  let taskId: string | undefined;
+  let detail: string | undefined;
+  try {
+    const j = (await res.json()) as { task_id?: string; detail?: string };
+    taskId = j.task_id;
+    detail = j.detail;
+  } catch {
+    detail = await res.text();
+  }
+  return { ok: res.ok, status: res.status, taskId, detail };
+}
+
+/** SELECT en solo lectura vía API Gateway (Python duckdb). */
+export async function postGatewayDbRead(
+  base: string,
+  body: GatewayDbReadPayload
+): Promise<{ ok: boolean; status: number; rows: Record<string, unknown>[]; detail?: string }> {
+  const res = await fetch(`${base}/api/v1/db/read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: body.query,
+      params: body.params ?? [],
+      user_id: body.user_id,
+      db_path: body.db_path,
+      tenant_id: body.tenant_id ?? 'PQRS',
+    }),
+    cache: 'no-store',
+  });
+  const raw = await res.text();
+  try {
+    const j = JSON.parse(raw) as { rows?: Record<string, unknown>[]; detail?: string };
+    if (res.ok && Array.isArray(j.rows)) {
+      return { ok: true, status: res.status, rows: j.rows };
+    }
+    return {
+      ok: false,
+      status: res.status,
+      rows: [],
+      detail: j.detail ?? raw,
+    };
+  } catch {
+    return { ok: false, status: res.status, rows: [], detail: raw };
+  }
+}
+
 export async function postPqrsAssistantChat(
   base: string,
   chatRequest: Record<string, unknown>

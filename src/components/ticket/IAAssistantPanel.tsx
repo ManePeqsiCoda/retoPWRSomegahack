@@ -33,6 +33,7 @@ export default function IAAssistantPanel({
     isGenerating,
     textoEnStream,
     error,
+    instruccionRechazada,
     tokensUsados,
     generacionSegundos,
     ultimaDuracionMs,
@@ -202,7 +203,20 @@ export default function IAAssistantPanel({
                 </div>
               )}
 
-              {!isGenerating && textoEnStream && !error && (
+              {!isGenerating && textoEnStream && !error && instruccionRechazada && (
+                <div className="mt-2 bg-gov-blue-50 border border-gov-blue-200 text-gov-gray-800 text-[11px] font-bold px-4 py-3 rounded-xl flex items-start gap-3 animate-in slide-in-from-left duration-500 shadow-sm">
+                  <Info size={18} className="text-gov-blue-600 shrink-0 mt-0.5" />
+                  <div className="flex flex-col gap-1.5 min-w-0">
+                    <span className="text-gov-blue-900 uppercase tracking-wide text-[10px]">Instrucción no válida</span>
+                    <p className="text-sm font-medium text-gov-gray-700 whitespace-pre-wrap leading-relaxed font-normal">
+                      {textoEnStream}
+                    </p>
+                    <span className="text-[10px] font-mono font-normal text-gov-gray-500">0,0 s · sin llamada al modelo</span>
+                  </div>
+                </div>
+              )}
+
+              {!isGenerating && textoEnStream && !error && !instruccionRechazada && (
                 <div className="mt-2 bg-sem-green-bg border border-sem-green/20 text-sem-green text-[11px] font-bold px-4 py-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-left duration-500 shadow-sm">
                   <CheckCircle2 size={16} />
                   <div className="flex flex-col gap-0.5">

@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  INVALID_INSTRUCCION_FUNCIONARIO_TEXT,
+  validateInstruccionFuncionario,
+} from '@/lib/ia/validate-instruccion-funcionario';
 
 interface RegenerarRequestBody {
   contenidoRaw: string;
@@ -147,6 +151,16 @@ export async function POST(request: NextRequest) {
 
     if (!body.contenidoRaw || !body.instruccionFuncionario || !body.secretariaNombre) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
+    }
+
+    const v = validateInstruccionFuncionario(body.instruccionFuncionario);
+    if (!v.ok) {
+      return NextResponse.json({
+        text: INVALID_INSTRUCCION_FUNCIONARIO_TEXT,
+        invalid_request: true,
+        elapsed_ms: 0,
+        usage_tokens: { total_tokens: 0, input_tokens: 0, output_tokens: 0 },
+      });
     }
 
     const { text, source } = await tryGateway(body);

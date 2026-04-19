@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useIdSecretariaActivo, useAuthStore, useDataMode } from '@/store/authStore';
 import { getTicketById, actualizarRespuesta } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
@@ -34,6 +35,7 @@ interface UseTicketDetailReturn {
 }
 
 export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
+  const router = useRouter();
   const [ticket, setTicket] = useState<TicketConUrgencia | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,8 +204,16 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
         return;
       }
 
-      // Actualizar estado local del ticket
-      setTicket(curr => curr ? { ...curr, respuestaSugerida: trimmedRespuesta, estado: 'Resuelto' } : null);
+      setTicket((curr) =>
+        curr
+          ? {
+              ...curr,
+              respuestaSugerida: trimmedRespuesta,
+              estado: 'Resuelto',
+            }
+          : null
+      );
+      router.refresh();
 
       // 2. Si el ciudadano es anónimo o no tiene email válido, no enviamos email
       const emailLimpio = ticket.emailCiudadano?.trim();
@@ -245,7 +255,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [ticket, idTicket, idSecretariaActivo, dataMode, respuestaActual, usuario, enviarRespuestaOficial]);
+  }, [ticket, idTicket, idSecretariaActivo, dataMode, respuestaActual, usuario, enviarRespuestaOficial, router]);
 
   // 3. Resetear cambios
   const resetRespuesta = useCallback(() => {
@@ -262,7 +272,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
     setIsSubmitting(true);
     try {
       const { actualizarEstadoTicket } = await import('@/services/ticketService');
-      await actualizarEstadoTicket(ticket.idTicket, nuevoEstado, dataMode);
+      await actualizarEstadoTicket(ticket.idTicket, nuevoEstado, idSecretariaActivo, dataMode);
       setTicket(curr => curr ? { ...curr, estado: nuevoEstado } : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cambiar estado');

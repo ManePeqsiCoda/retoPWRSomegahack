@@ -20,6 +20,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useTickets } from '@/hooks/useTickets';
+import { useIdSecretariaActivo } from '@/store/authStore';
 import { TicketConUrgencia, TicketEstado } from '@/types';
 import { UrgencyBadge } from './';
 import { formatearFecha, truncarTexto } from '@/lib/utils';
@@ -164,6 +165,7 @@ function KanbanColumn({
  */
 export default function KanbanBoard() {
   const { tickets, refetch } = useTickets();
+  const idSecretaria = useIdSecretariaActivo();
   const [items, setItems] = useState<Record<TicketEstado, TicketConUrgencia[]>>({
     Pendiente: [],
     En_Revision: [],
@@ -263,9 +265,9 @@ export default function KanbanBoard() {
         )
     ) as TicketEstado;
 
-    if (finalState) {
+    if (finalState && idSecretaria) {
       try {
-        await actualizarEstadoTicket(idTicket, finalState, dataMode);
+        await actualizarEstadoTicket(idTicket, finalState, idSecretaria, dataMode);
         refetch(); // Sincronizar con el store global
       } catch (err) {
         console.error("Error al persistir cambio de estado:", err);
