@@ -37,19 +37,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Contenido no válido', esBasura: true });
     }
 
-    // ESCENARIO B: SIGUEN FALTANDO DATOS
-    if (analisis.faltanDatos) {
-      // Guardamos (o actualizamos) en la memoria para el próximo correo
-      MEMORIA_HILOS_MOCK[remitente] = {
-        asunto: asunto || contextoAnterior?.asunto || 'Solicitud Pendiente',
-        cuerpoOriginal: contextoAnterior ? `${contextoAnterior.cuerpoOriginal}\n${cuerpo}` : cuerpo,
-        fecha: new Date()
-      };
+    // 2. GENERACIÓN DE RESPUESTA Y RADICADO
+    const idSecretaria = 'sec-salud'; // Default para demo
+    const numeroRadicado = analisis.faltanDatos ? 'PENDIENTE-DATOS' : generarNumeroRadicado(idSecretaria);
+    const idTicket = `tk-${Date.now()}`;
+    const nombreParaTicket = (analisis.nombreExtraido && analisis.nombreExtraido !== 'No encontrado') 
+      ? analisis.nombreExtraido 
+      : (nombre || 'Ciudadano Anónimo');
 
+    // ESCENARIO B: FALTAN DATOS (Nombre/Cédula)
+    if (analisis.faltanDatos) {
+      console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
+      
+      // Enviamos correo pidiendo los datos (usamos el mismo servicio pero con el texto de la IA)
       await sendConfirmationEmail(
         remitente, 
         'EN TRÁMITE', 
-        nombre || 'Ciudadano', 
+        nombreParaTicket, 
         analisis.respuestaGenerada
       );
 
@@ -62,9 +66,7 @@ export async function POST(req: NextRequest) {
 
     // ESCENARIO C: ÉXITO (Datos completos)
     // 1. Generar radicado real
-    const idSecretaria = 'sec-salud';
-    const numeroRadicado = generarNumeroRadicado(idSecretaria);
-    const idTicket = `tk-${Date.now()}`;
+    const numeroRadicadoReal = generarNumeroRadicado(idSecretaria);
 
     // 2. Crear ticket con el contenido fusionado (Historial + Nuevo)
     const contenidoFinal = contextoAnterior 
@@ -73,9 +75,9 @@ export async function POST(req: NextRequest) {
 
     const nuevoTicket: Ticket = {
       idTicket,
-      numeroRadicado,
+      numeroRadicado: numeroRadicadoReal,
       idSecretaria,
-      nombreCiudadano: nombre || 'Ciudadano Anónimo',
+      nombreCiudadano: nombreParaTicket,
       emailCiudadano: remitente,
       tipoSolicitud: analisis.categoriaSugerida,
       asunto: asunto || contextoAnterior?.asunto || 'Sin asunto',
@@ -92,10 +94,10 @@ export async function POST(req: NextRequest) {
     
     // 3. LIMPIAR MEMORIA (La conversación ha concluido con un radicado)
     delete MEMORIA_HILOS_MOCK[remitente];
-    console.log(`[IA-Continuidad] ✅ Hilo cerrado y ticket creado: ${numeroRadicado}`);
+    console.log(`[IA-Continuidad] ✅ Hilo cerrado y ticket creado: ${numeroRadicadoReal}`);
 
     // 4. Enviar respuesta humana final
-    await sendConfirmationEmail(remitente, numeroRadicado, nombre, analisis.respuestaGenerada);
+    await sendConfirmationEmail(remitente, numeroRadicadoReal, nombreParaTicket, analisis.respuestaGenerada);
 
     return NextResponse.json({ success: true, numeroRadicado });
 

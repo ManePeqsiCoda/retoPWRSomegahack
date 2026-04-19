@@ -41,6 +41,7 @@ export interface ResultadoProcesamientoIA {
   esBasura: boolean;
   faltanDatos: boolean;
   datosFaltantes: string[];
+  nombreExtraido: string;
   respuestaGenerada: string;
   categoriaSugerida: TipoSolicitud;
 }
@@ -60,20 +61,23 @@ export async function procesarCorreoConIA(
     Eres el Agente de Triaje Inteligente de la Alcaldía de Medellín. 
     Tu objetivo es analizar correos electrónicos entrantes y tomar decisiones de radicación.
     
-    INSTRUCCIONES:
-    1. Determina si el correo es basura (spam, publicidad, mensajes sin sentido, pruebas de texto tipo "asdf").
-    2. Busca datos de identidad: El ciudadano DEBE proporcionar su Nombre Completo y su Cédula de Ciudadanía (ID).
-       IMPORTANTE: Acepta cédulas con puntos, comas o espacios (ej. 1.023.456.789 o 1 023 456 789 son VÁLIDOS). No la marques como faltante si está presente en cualquier formato numérico.
-    3. Clasifica la solicitud en una de estas categorías: Peticion, Queja, Reclamo, Sugerencia, Denuncia.
-    4. Genera una respuesta:
-       - Si faltan datos: Solicita los datos faltantes amablemente especificando cuáles faltan.
-       - Si el mensaje es válido: Redacta una respuesta humana, empática y profesional. Menciona que se dará trámite en un plazo de 15 días según la ley.
+    INSTRUCCIONES CRÍTICAS:
+    1. Determina si el correo es basura (spam, publicidad, mensajes sin sentido).
+    2. EXTRACCIÓN DE IDENTIDAD: Ignora el nombre del remitente del email (${nombreRemitente}). 
+       Busca dentro del CUERPO DEL CORREO quién dice ser el ciudadano (ej. "Mi nombre es...", "Cordial saludo, soy...", o la firma al final).
+       Si no encuentras un nombre claro dentro del cuerpo, márcalo como dato faltante.
+    3. Busca la Cédula de Ciudadanía (ID). Acepta cualquier formato (con puntos, espacios, etc.).
+    4. Clasifica la solicitud: Peticion, Queja, Reclamo, Sugerencia, Denuncia.
+    5. Genera una respuesta:
+       - Si faltan datos: Solicita los datos faltantes amablemente.
+       - Si es válido: Redacta una respuesta humana y empática usando el NOMBRE EXTRAÍDO DEL CUERPO. Menciona el plazo de 15 días hábiles.
     
     DEBES RESPONDER EXCLUSIVAMENTE EN FORMATO JSON:
     {
       "esBasura": boolean,
       "faltanDatos": boolean,
       "datosFaltantes": string[],
+      "nombreExtraido": "Nombre Real Encontrado o 'No encontrado'",
       "respuestaGenerada": string,
       "categoriaSugerida": "Peticion" | "Queja" | "Reclamo" | "Sugerencia" | "Denuncia"
     }
@@ -107,9 +111,10 @@ export async function procesarCorreoConIA(
     // Fallback de emergencia si la IA falla (para que el sistema no se rompa)
     return {
       esBasura: false,
-      faltanDatos: !contenidoRaw.includes('1'), // Heurística muy básica
-      datosFaltantes: ['Identificación (Cédula)'],
-      respuestaGenerada: 'Cordial saludo. Hemos recibido su mensaje. Sin embargo, para proceder, requerimos que nos proporcione su número de documento. Gracias.',
+      faltanDatos: true,
+      datosFaltantes: ['Identificación (Cédula)', 'Nombre completo'],
+      nombreExtraido: 'No encontrado',
+      respuestaGenerada: 'Cordial saludo. Hemos recibido su mensaje. Sin embargo, para proceder, requerimos que nos proporcione su nombre completo y número de documento. Gracias.',
       categoriaSugerida: 'Peticion'
     };
   }
