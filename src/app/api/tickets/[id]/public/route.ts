@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, ensureSchema } from '@/lib/motherduck';
 
+const T = 'pqrsd_crm.tickets';
+
 /**
  * GET /api/tickets/[id]/public — Datos públicos para seguimiento del ciudadano.
  * NO requiere autenticación. Solo expone campos seguros.
@@ -26,8 +28,8 @@ export async function GET(
       `SELECT 
         id_ticket, numero_radicado, tipo_solicitud, asunto,
         estado, nombre_ciudadano, fecha_creacion, fecha_limite, fecha_actualizacion
-       FROM tickets 
-       WHERE id_ticket = $1`,
+       FROM ${T} 
+       WHERE id_ticket = ?`,
       [params.id]
     );
 
@@ -38,7 +40,6 @@ export async function GET(
       );
     }
 
-    // Solo exponemos datos seguros para el ciudadano
     return NextResponse.json({
       data: {
         idTicket: row.id_ticket,

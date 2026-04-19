@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne, ensureSchema } from '@/lib/motherduck';
 import { mapRowToTicket } from '@/lib/ticketMapper';
 
+const T = 'pqrsd_crm.tickets';
+
 /**
  * GET /api/tickets/[id] — Detalle de un ticket
  */
@@ -13,7 +15,7 @@ export async function GET(
     await ensureSchema();
 
     const row = await queryOne(
-      'SELECT * FROM tickets WHERE id_ticket = $1',
+      `SELECT * FROM ${T} WHERE id_ticket = ?`,
       [params.id]
     );
 
@@ -51,9 +53,7 @@ export async function PATCH(
     const body = await req.json();
     const updates: string[] = [];
     const values: unknown[] = [];
-    let paramIndex = 1;
 
-    // Campos actualizables
     const allowedFields: Record<string, string> = {
       estado: 'estado',
       respuestaSugerida: 'respuesta_sugerida',
@@ -66,7 +66,7 @@ export async function PATCH(
 
     for (const [camelKey, snakeKey] of Object.entries(allowedFields)) {
       if (body[camelKey] !== undefined) {
-        updates.push(`${snakeKey} = $${paramIndex++}`);
+        updates.push(`${snakeKey} = ?`);
         values.push(body[camelKey]);
       }
     }
@@ -75,10 +75,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'No hay campos para actualizar' }, { status: 400 });
     }
 
-    updates.push(`fecha_actualizacion = now()`);
+    updates.push('fecha_actualizacion = CURRENT_TIMESTAMP');
     values.push(params.id);
 
-    const sql = `UPDATE tickets SET ${updates.join(', ')} WHERE id_ticket = $${paramIndex}`;
+    const sql = `UPDATE ${T} SET ${updates.join(', ')} WHERE id_ticket = ?`;
     await query(sql, values);
 
     return NextResponse.json({

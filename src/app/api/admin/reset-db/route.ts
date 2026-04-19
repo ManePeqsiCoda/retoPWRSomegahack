@@ -3,29 +3,23 @@ import { query, ensureSchema } from '@/lib/motherduck';
 
 /**
  * POST /api/admin/reset-db
- * ⚠️ PELIGRO: Limpia toda la base de datos para presentaciones limpias.
+ * ⚠️ PELIGRO: Limpia tablas CRM en la DuckDB local para presentaciones limpias.
  */
 export async function POST() {
   try {
-    // 1. Verificación básica de seguridad (opcional, pero recomendada)
-    // En una app real usaríamos roles de admin, aquí confiamos en el acceso físico del presentador
-    
     await ensureSchema();
 
-    console.log('[Admin] ⚠️ Iniciando reset de base de datos...');
+    console.log('[Admin] Iniciando reset de tablas pqrsd_crm...');
 
-    // 2. Limpiar tablas
-    // TRUNCATE es más rápido que DELETE y resetea contadores si los hubiera
-    await query('DELETE FROM tickets');
+    await query('DELETE FROM pqrsd_crm.tickets');
     
-    // Si tienes otras tablas que limpiar, añádelas aquí
     try {
-      await query('DELETE FROM registros_email');
+      await query('DELETE FROM pqrsd_crm.registros_email');
     } catch {
       // Ignorar si la tabla no existe aún
     }
 
-    console.log('[Admin] ✅ Base de datos reseteada con éxito');
+    console.log('[Admin] Tablas CRM limpiadas');
 
     return NextResponse.json({
       success: true,
@@ -34,7 +28,7 @@ export async function POST() {
     });
 
   } catch (error) {
-    console.error('[Admin] ❌ Error en reset de DB:', error);
+    console.error('[Admin] Error en reset de DB:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido'

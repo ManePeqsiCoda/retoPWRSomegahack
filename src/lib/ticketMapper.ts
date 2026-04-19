@@ -1,5 +1,5 @@
 /**
- * Mapea una fila de MotherDuck (snake_case) a un objeto Ticket (camelCase).
+ * Mapea una fila DuckDB pqrsd_crm.tickets (snake_case) a un objeto Ticket (camelCase).
  */
 
 interface TicketRow {

@@ -175,7 +175,7 @@ export default function LoginPage() {
               className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all group"
             >
               <span className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">Modo Admin</span>
-              <span className="text-[10px] text-slate-500 mt-0.5">MotherDuck Live API</span>
+              <span className="text-[10px] text-slate-500 mt-0.5">DuckDB + API Routes</span>
             </button>
           </div>
         </div>

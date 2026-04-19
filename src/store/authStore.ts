@@ -4,9 +4,9 @@ import { Usuario } from '@/types';
 import { USUARIOS_MOCK } from '@/services/mockData';
 
 /**
- * Modo de datos: determina si el CRM usa datos mock o MotherDuck real.
+ * Modo de datos: determina si el CRM usa datos mock o DuckDB local / Gateway.
  * - 'mock': usuario de prueba con datos estáticos (offline).
- * - 'live': usuario admin conectado a MotherDuck vía API Routes.
+ * - 'live': usuario admin conectado a DuckDB vía API Routes.
  */
 export type DataMode = 'mock' | 'live';
 

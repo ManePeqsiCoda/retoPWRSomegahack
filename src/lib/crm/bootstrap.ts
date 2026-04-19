@@ -38,6 +38,7 @@ async function pollUntilTableReadable(
 function ticketInsertParams(t: Ticket): unknown[] {
   return [
     t.idTicket,
+    t.numeroRadicado,
     t.tipoSolicitud,
     t.idSecretaria,
     t.fechaCreacion,
@@ -48,6 +49,8 @@ function ticketInsertParams(t: Ticket): unknown[] {
     t.respuestaSugerida,
     t.canalOrigen,
     t.nombreCiudadano,
+    t.emailCiudadano ?? null,
+    t.asunto ?? 'Solicitud PQRSD',
   ];
 }
 
@@ -59,7 +62,7 @@ export async function ensureCrmSchemaAndSeed(): Promise<{ ok: boolean; detail?: 
   const dbPath = crmDuckDbPath();
   const base = gatewayBaseUrl();
   if (!dbPath || !base) {
-    return { ok: false, detail: 'CRM_DUCKDB_PATH o gateway URL no configurados' };
+    return { ok: false, detail: 'DUCKCLAW_PQRSD_ASSISTANT_DB_PATH (o CRM_DUCKDB_PATH) o gateway URL no configurados' };
   }
   const userId = crmVaultUserId();
   const tenantId = crmTenantId();
@@ -102,9 +105,10 @@ export async function ensureCrmSchemaAndSeed(): Promise<{ ok: boolean; detail?: 
     const p = ticketInsertParams(t);
     const w = await postGatewayDbWrite(base, {
       query: `INSERT INTO pqrsd_crm.tickets (
-        id_ticket, tipo_solicitud, id_secretaria, fecha_creacion, fecha_limite, estado,
-        contenido_raw, resumen_ia, respuesta_sugerida, canal_origen, nombre_ciudadano, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())`,
+        id_ticket, numero_radicado, tipo_solicitud, id_secretaria, fecha_creacion, fecha_limite, estado,
+        contenido_raw, resumen_ia, respuesta_sugerida, canal_origen, nombre_ciudadano,
+        email_ciudadano, asunto, fecha_actualizacion
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
       params: p,
       user_id: userId,
       db_path: dbPath,

@@ -77,16 +77,12 @@ async function callOpenRouterDirect(prompt: string): Promise<string> {
 
 /** Intenta gateway DuckClaw; si falla, usa OpenRouter directo */
 async function tryGateway(body: ResumenEjecutivoBody): Promise<{ text: string; source: string }> {
-  // Intentar el gateway primero (solo si hay URL configurada)
-  const gatewayUrl = (
-    process.env.DUCKCLAW_GATEWAY_URL?.trim() ||
-    process.env.NEXT_PUBLIC_API_URL?.trim() ||
-    ''
-  ).replace(/\/$/, '');
+  const { gatewayBaseUrl, postPqrsAssistantChat, crmGatewayUserId, responseTextFromGatewayPayload } =
+    await import('@/lib/duckclaw-gateway');
+  const gatewayUrl = gatewayBaseUrl();
 
   if (gatewayUrl) {
     try {
-      const { postPqrsAssistantChat, crmGatewayUserId, responseTextFromGatewayPayload } = await import('@/lib/duckclaw-gateway');
 
       const chatRequest = {
         message: buildResumenPrompt(body),

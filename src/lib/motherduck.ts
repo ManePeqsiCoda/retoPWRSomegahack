@@ -1,69 +1,92 @@
-import { Pool } from 'pg';
-
 /**
- * MotherDuck PostgreSQL Wire Protocol Client
- * 
- * En Vercel serverless, NO podemos usar el binario nativo de DuckDB.
- * MotherDuck expone un endpoint PostgreSQL compatible que funciona
- * con cualquier driver `pg` estándar — ideal para serverless.
- * 
- * Endpoint: pg.us-east-1-aws.motherduck.com:5432
- * Auth: token de acceso como password
+ * Cliente DuckDB local (archivo .duckdb) para rutas API que no pasan por el Gateway.
+ *
+ * Misma bóveda que PQRSD-Assistant vía DUCKCLAW_PQRSD_ASSISTANT_DB_PATH.
+ * No abrir el mismo archivo en escritura concurrente desde otro proceso (Gateway, db-writer)
+ * sin coordinación; en producción preferir lecturas/escrituras vía API Gateway.
  */
+import fs from 'fs';
+import path from 'path';
+import duckdb from 'duckdb';
 
-const MOTHERDUCK_PG_HOST = 'pg.us-east-1-aws.motherduck.com';
-const MOTHERDUCK_PG_PORT = 5432;
+import { resolvePqrsAssistantDuckDbPath } from '@/lib/crm/config';
 
-let pool: Pool | null = null;
+let _database: duckdb.Database | null = null;
+let _connection: duckdb.Connection | null = null;
 
-function getPool(): Pool {
-  if (pool) return pool;
-
-  const token = process.env.MOTHERDUCK_TOKEN;
-  const database = process.env.MOTHERDUCK_DB || 'crm-pqrsd';
-
-  if (!token) {
-    throw new Error(
-      '[MotherDuck] MOTHERDUCK_TOKEN no está configurado. ' +
-      'Agrega esta variable de entorno en .env.local y en Vercel Dashboard.'
-    );
+function getConnection(): duckdb.Connection {
+  if (_connection) {
+    return _connection;
   }
+  const dbPath = resolvePqrsAssistantDuckDbPath();
+  const dir = path.dirname(dbPath);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch {
+    // ignore
+  }
+  _database = new duckdb.Database(dbPath);
+  _connection = _database.connect();
+  return _connection;
+}
 
-  pool = new Pool({
-    host: MOTHERDUCK_PG_HOST,
-    port: MOTHERDUCK_PG_PORT,
-    database: database,
-    user: 'motherduck',
-    password: token,
-    ssl: { rejectUnauthorized: true },
-    max: 3,                    // Pool pequeño para serverless
-    idleTimeoutMillis: 10000,  // Cerrar conexiones inactivas rápido
-    connectionTimeoutMillis: 10000,
+function allAsync<T = Record<string, unknown>>(
+  sql: string,
+  params?: unknown[]
+): Promise<T[]> {
+  const conn = getConnection();
+  return new Promise((resolve, reject) => {
+    const cb = (err: Error | null, rows: unknown) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve((rows as T[]) ?? []);
+      }
+    };
+    const c = conn as unknown as {
+      all: (sql: string, ...args: unknown[]) => void;
+    };
+    if (params && params.length > 0) {
+      c.all(sql, ...params, cb);
+    } else {
+      c.all(sql, cb);
+    }
   });
+}
 
-  pool.on('error', (err) => {
-    console.error('[MotherDuck] Error inesperado en pool:', err);
-    pool = null;
+function runAsync(sql: string, params?: unknown[]): Promise<void> {
+  const conn = getConnection();
+  return new Promise((resolve, reject) => {
+    const cb = (err: Error | null) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    };
+    const c = conn as unknown as {
+      run: (sql: string, ...args: unknown[]) => void;
+    };
+    if (params && params.length > 0) {
+      c.run(sql, ...params, cb);
+    } else {
+      c.run(sql, cb);
+    }
   });
-
-  return pool;
 }
 
 /**
- * Ejecuta una query SQL contra MotherDuck.
- * Retorna las filas directamente.
+ * Ejecuta SQL de lectura; retorna filas.
  */
 export async function query<T = Record<string, unknown>>(
   sql: string,
   params?: unknown[]
 ): Promise<T[]> {
-  const p = getPool();
-  const result = await p.query(sql, params);
-  return result.rows as unknown as T[];
+  return allAsync<T>(sql, params);
 }
 
 /**
- * Ejecuta una query que retorna una sola fila (o null).
+ * Una fila o null.
  */
 export async function queryOne<T = Record<string, unknown>>(
   sql: string,
@@ -74,95 +97,86 @@ export async function queryOne<T = Record<string, unknown>>(
 }
 
 /**
- * Ejecuta una query de mutación (INSERT, UPDATE, DELETE).
- * Retorna el número de filas afectadas.
+ * Mutación sin resultado tabular.
  */
 export async function execute(
   sql: string,
   params?: unknown[]
 ): Promise<number> {
-  const p = getPool();
-  const result = await p.query(sql, params);
-  return result.rowCount ?? 0;
+  await runAsync(sql, params);
+  return 0;
 }
 
-/**
- * Inicializa el schema de la base de datos.
- * Se ejecuta una sola vez al primer request del API.
- */
+const SCHEMA = 'pqrsd_crm';
+const TICKETS = `${SCHEMA}.tickets`;
+const SECRETARIAS = `${SCHEMA}.secretarias`;
+
 let schemaInitialized = false;
 
 export async function ensureSchema(): Promise<void> {
-  if (schemaInitialized) return;
-
+  if (schemaInitialized) {
+    return;
+  }
   try {
-    await query(`
-      CREATE TABLE IF NOT EXISTS tickets (
-        id_ticket         VARCHAR PRIMARY KEY,
-        numero_radicado   VARCHAR NOT NULL,
-        id_secretaria     VARCHAR NOT NULL DEFAULT 'sec-salud',
-        nombre_ciudadano  VARCHAR NOT NULL DEFAULT 'Ciudadano Anónimo',
+    await runAsync(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}`);
+
+    await runAsync(`
+      CREATE TABLE IF NOT EXISTS ${TICKETS} (
+        id_ticket VARCHAR PRIMARY KEY,
+        numero_radicado VARCHAR NOT NULL,
+        id_secretaria VARCHAR NOT NULL DEFAULT 'sec-salud',
+        nombre_ciudadano VARCHAR NOT NULL DEFAULT 'Ciudadano Anónimo',
         documento_ciudadano VARCHAR,
-        email_ciudadano   VARCHAR,
+        email_ciudadano VARCHAR,
         telefono_ciudadano VARCHAR,
-        tipo_solicitud    VARCHAR NOT NULL DEFAULT 'Peticion',
-        asunto            VARCHAR DEFAULT 'Solicitud PQRSD',
-        contenido_raw     TEXT NOT NULL,
-        resumen_ia        TEXT,
+        tipo_solicitud VARCHAR NOT NULL DEFAULT 'Peticion',
+        asunto VARCHAR DEFAULT 'Solicitud PQRSD',
+        contenido_raw TEXT NOT NULL,
+        resumen_ia TEXT,
         respuesta_sugerida TEXT,
-        estado            VARCHAR NOT NULL DEFAULT 'Pendiente',
-        canal_origen      VARCHAR NOT NULL DEFAULT 'Email',
-        fecha_creacion    TIMESTAMP DEFAULT now(),
-        fecha_limite      TIMESTAMP,
-        fecha_actualizacion TIMESTAMP DEFAULT now()
+        estado VARCHAR NOT NULL DEFAULT 'Pendiente',
+        canal_origen VARCHAR NOT NULL DEFAULT 'Email',
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        fecha_limite TIMESTAMP,
+        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Evolución de Schema: Añadir columnas si el tabla ya existía
-    try {
-      // DuckDB no tiene "ADD COLUMN IF NOT EXISTS" nativo en un solo paso estable
-      // Intentamos añadirlas; si ya existen, DuckDB fallará y capturamos el error
-      await query('ALTER TABLE tickets ADD COLUMN documento_ciudadano VARCHAR');
-      console.log('[MotherDuck] ✅ Columna documento_ciudadano añadida');
-    } catch {
-      // Ignorar si la columna ya existe
+    for (const col of ['documento_ciudadano', 'telefono_ciudadano'] as const) {
+      try {
+        await runAsync(`ALTER TABLE ${TICKETS} ADD COLUMN ${col} VARCHAR`);
+      } catch {
+        // ya existe
+      }
     }
 
-    try {
-      await query('ALTER TABLE tickets ADD COLUMN telefono_ciudadano VARCHAR');
-      console.log('[MotherDuck] ✅ Columna telefono_ciudadano añadida');
-    } catch {
-      // Ignorar si la columna ya existe
-    }
-
-    await query(`
-      CREATE TABLE IF NOT EXISTS secretarias (
-        id_secretaria       VARCHAR PRIMARY KEY,
-        nombre              VARCHAR NOT NULL,
+    await runAsync(`
+      CREATE TABLE IF NOT EXISTS ${SECRETARIAS} (
+        id_secretaria VARCHAR PRIMARY KEY,
+        nombre VARCHAR NOT NULL,
         color_identificador VARCHAR NOT NULL DEFAULT '#0057B8'
       )
     `);
 
-    // Insertar secretarías si no existen
-    const existingSecretarias = await query('SELECT COUNT(*) as cnt FROM secretarias');
-    const count = Number((existingSecretarias[0] as Record<string, unknown>)?.cnt ?? 0);
-    
+    const existingSecretarias = await query<{ cnt: bigint | number }>(
+      `SELECT COUNT(*)::BIGINT AS cnt FROM ${SECRETARIAS}`
+    );
+    const count = Number(existingSecretarias[0]?.cnt ?? 0);
     if (count === 0) {
-      await query(`
-        INSERT INTO secretarias (id_secretaria, nombre, color_identificador) VALUES
+      await runAsync(`
+        INSERT INTO ${SECRETARIAS} (id_secretaria, nombre, color_identificador) VALUES
           ('sec-salud',      'Secretaría de Salud',                '#0057B8'),
           ('sec-educacion',  'Secretaría de Educación',            '#00875A'),
           ('sec-movilidad',  'Secretaría de Movilidad',            '#D97706'),
           ('sec-cultura',    'Secretaría de Cultura',              '#7C3AED'),
           ('sec-desarrollo', 'Secretaría de Desarrollo Económico', '#DC2626')
       `);
-      console.log('[MotherDuck] ✅ Secretarías insertadas');
     }
 
     schemaInitialized = true;
-    console.log('[MotherDuck] ✅ Schema verificado/creado correctamente');
+    console.log('[DuckDB local] Schema pqrsd_crm verificado/creado');
   } catch (err) {
-    console.error('[MotherDuck] ❌ Error al crear schema:', err);
+    console.error('[DuckDB local] Error al crear schema:', err);
     throw err;
   }
 }

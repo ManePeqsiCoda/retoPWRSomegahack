@@ -253,7 +253,7 @@ export default function SettingsPage() {
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white dark:bg-dark-surface rounded-2xl border border-sem-red/10">
             <div className="space-y-1">
-              <p className="text-sm font-black text-gov-gray-900 dark:text-dark-text">Limpiar Base de Datos (MotherDuck)</p>
+              <p className="text-sm font-black text-gov-gray-900 dark:text-dark-text">Limpiar Base de Datos (DuckDB local)</p>
               <p className="text-xs text-gov-gray-500 dark:text-dark-muted max-w-sm">
                 Elimina todos los tickets y registros actuales para iniciar una demostración desde cero. 
                 <span className="font-bold text-sem-red italic"> Esta acción no se puede deshacer.</span>

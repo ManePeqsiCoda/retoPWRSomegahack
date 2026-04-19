@@ -11,7 +11,7 @@ import { extraerEmail } from '@/lib/utils';
  * API ENDPOINT: Ingesta de Correos Electrónicos
  * Sistema con Memoria de Continuidad: Detecta si es una respuesta a una solicitud anterior.
  * 
- * Persiste tickets tanto en MOCK (memoria) como en MotherDuck (cloud DB).
+ * Persiste tickets tanto en MOCK (memoria) como en DuckDB local (pqrsd_crm.tickets).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -68,12 +68,11 @@ export async function POST(req: NextRequest) {
       ? analisis.nombreExtraido 
       : 'Ciudadano por identificar';
 
-    // PERSISTIR EN MOTHERDUCK (para usuario admin / datos reales)
     try {
       await ensureSchema();
-      console.log('[MotherDuck] 🌐 Conexión validada para ingesta');
+      console.log('[DuckDB] Conexión validada para ingesta');
     } catch (dbErr) {
-      console.error('[MotherDuck] ❌ Error de conexión:', dbErr);
+      console.error('[DuckDB] Error de conexión:', dbErr);
     }
 
     // ESCENARIO B: FALTAN DATOS (Nombre/Cédula)
@@ -87,15 +86,14 @@ export async function POST(req: NextRequest) {
         nombre: nombreParaTicket
       };
 
-      // 2. PERSISTIR TAMBIÉN EN MOTHERDUCK (para que aparezca en la bandeja aunque esté incompleto)
       try {
         await query(
-          `INSERT INTO tickets (
+          `INSERT INTO pqrsd_crm.tickets (
             id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
             email_ciudadano, documento_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
             resumen_ia, respuesta_sugerida, estado, canal_origen,
             fecha_creacion, fecha_limite, fecha_actualizacion
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,now())`,
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
           [
             idTicket, numeroRadicadoReal, idSecretaria, nombreParaTicket, 
             remitente, null, null, analisis.categoriaSugerida, 
@@ -105,7 +103,7 @@ export async function POST(req: NextRequest) {
           ]
         );
       } catch (dbErr) {
-        console.error('[MotherDuck] Error al persistir ticket incompleto:', dbErr);
+        console.error('[DuckDB] Error al persistir ticket incompleto:', dbErr);
       }
 
       // Enviamos correo pidiendo los datos
@@ -147,32 +145,30 @@ export async function POST(req: NextRequest) {
       canalOrigen: 'Email',
     };
 
-    // PERSISTIR EN MOTHERDUCK (para usuario admin / datos reales)
     try {
       await ensureSchema();
 
-      // Deduplicación: Verificar si en el último minuto ya entró un ticket igual (previene reintentos de webhooks como Zapier/Make)
-      const duplicateCheck = await query<{ cnt: number }>(
-        `SELECT COUNT(*) as cnt FROM tickets 
-         WHERE email_ciudadano = $1 
-         AND asunto = $2 
-         AND fecha_creacion > now() - interval '2 minutes'`,
+      const duplicateCheck = await query<{ cnt: bigint | number }>(
+        `SELECT COUNT(*)::BIGINT AS cnt FROM pqrsd_crm.tickets 
+         WHERE email_ciudadano = ? 
+         AND asunto = ? 
+         AND fecha_creacion > (CURRENT_TIMESTAMP - INTERVAL 2 MINUTES)`,
         [nuevoTicket.emailCiudadano, nuevoTicket.asunto]
       );
       
       const count = Number(duplicateCheck[0]?.cnt || 0);
       if (count > 0) {
-        console.log(`[MotherDuck] ⚠️ Ticket duplicado detectado para ${remitente}, ignorando.`);
+        console.log(`[DuckDB] Ticket duplicado detectado para ${remitente}, ignorando.`);
         return NextResponse.json({ success: true, duplicated: true, message: 'Ticket ya procesado recientemente' });
       }
 
       await query(
-        `INSERT INTO tickets (
+        `INSERT INTO pqrsd_crm.tickets (
           id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
           email_ciudadano, documento_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
           resumen_ia, respuesta_sugerida, estado, canal_origen,
           fecha_creacion, fecha_limite, fecha_actualizacion
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,now())`,
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
         [
           nuevoTicket.idTicket, nuevoTicket.numeroRadicado, nuevoTicket.idSecretaria,
           nuevoTicket.nombreCiudadano, nuevoTicket.emailCiudadano, null, null, nuevoTicket.tipoSolicitud,
@@ -181,10 +177,9 @@ export async function POST(req: NextRequest) {
           nuevoTicket.fechaCreacion, nuevoTicket.fechaLimite,
         ]
       );
-      console.log(`[MotherDuck] ✅ Ticket ${idTicket} persistido en la nube`);
+      console.log(`[DuckDB] Ticket ${idTicket} persistido`);
     } catch (dbErr) {
-      // Si falla MotherDuck, el ticket sigue existiendo en MOCK
-      console.error('[MotherDuck] ⚠️ No se pudo persistir en DB (el ticket existe en mock):', dbErr);
+      console.error('[DuckDB] No se pudo persistir en DB (el ticket existe en mock):', dbErr);
     }
     
     // LIMPIAR MEMORIA (La conversación ha concluido con un radicado)

@@ -19,7 +19,7 @@ export async function respondTicketInDuckDb(
       UPDATE pqrsd_crm.tickets
       SET estado = 'Resuelto',
           respuesta_sugerida = ?,
-          updated_at = now()
+          fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id_ticket = ? AND id_secretaria = ?
     `.trim(),
     params: [respuestaFinal, idTicket, idSecretaria],

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, ensureSchema } from '@/lib/motherduck';
 import { mapRowToTicket } from '@/lib/ticketMapper';
 
+const T = 'pqrsd_crm.tickets';
+
 /**
  * GET /api/tickets — Lista todos los tickets.
  * Soporta filtros por query params: estado, tipo, search, idSecretaria
@@ -16,33 +18,31 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search');
     const idSecretaria = searchParams.get('idSecretaria');
 
-    let sql = 'SELECT * FROM tickets WHERE 1=1';
+    let sql = `SELECT * FROM ${T} WHERE 1=1`;
     const params: unknown[] = [];
-    let paramIndex = 1;
 
     if (idSecretaria && idSecretaria !== 'all') {
-      sql += ` AND id_secretaria = $${paramIndex++}`;
+      sql += ' AND id_secretaria = ?';
       params.push(idSecretaria);
     }
     if (estado && estado !== 'Todos') {
-      sql += ` AND estado = $${paramIndex++}`;
+      sql += ' AND estado = ?';
       params.push(estado);
     }
     if (tipo && tipo !== 'Todos') {
-      sql += ` AND tipo_solicitud = $${paramIndex++}`;
+      sql += ' AND tipo_solicitud = ?';
       params.push(tipo);
     }
     if (search) {
-      sql += ` AND (LOWER(nombre_ciudadano) LIKE $${paramIndex} OR LOWER(contenido_raw) LIKE $${paramIndex})`;
-      params.push(`%${search.toLowerCase()}%`);
-      paramIndex++;
+      const q = `%${search.toLowerCase()}%`;
+      sql += ' AND (LOWER(nombre_ciudadano) LIKE ? OR LOWER(contenido_raw) LIKE ?)';
+      params.push(q, q);
     }
 
     sql += ' ORDER BY fecha_creacion DESC';
 
     const rows = await query(sql, params);
 
-    // Mapear snake_case → camelCase para el frontend
     const tickets = rows.map(mapRowToTicket);
 
     return NextResponse.json({
@@ -95,12 +95,12 @@ export async function POST(req: NextRequest) {
     const limit = fechaLimite || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
 
     await query(
-      `INSERT INTO tickets (
+      `INSERT INTO ${T} (
         id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
         email_ciudadano, tipo_solicitud, asunto, contenido_raw,
         resumen_ia, respuesta_sugerida, estado, canal_origen,
         fecha_creacion, fecha_limite, fecha_actualizacion
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,now())`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
       [
         idTicket, numeroRadicado, idSecretaria, nombreCiudadano,
         emailCiudadano, tipoSolicitud, asunto, contenidoRaw,
@@ -122,4 +122,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

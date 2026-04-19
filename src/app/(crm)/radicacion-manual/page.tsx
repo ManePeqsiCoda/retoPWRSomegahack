@@ -153,7 +153,7 @@ export default function RadicacionManualPage() {
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-sem-green uppercase tracking-wide">¡Radicación Exitosa!</h2>
             <p className="text-sm text-gov-gray-600 dark:text-dark-muted">
-              Se han creado <strong>{successCount}</strong> tickets correctamente en la base de datos de MotherDuck.
+              Se han creado <strong>{successCount}</strong> tickets correctamente en la base de datos DuckDB (pqrsd_crm).
               Redirigiendo a la bandeja de entrada...
             </p>
           </div>

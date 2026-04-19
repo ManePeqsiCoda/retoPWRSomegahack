@@ -4,6 +4,8 @@ import { generarNumeroRadicado } from '@/lib/radicado';
 import { sendConfirmationEmail } from '@/services/emailService';
 import { extraerEmail } from '@/lib/utils';
 
+const T = 'pqrsd_crm.tickets';
+
 interface ManualTicketInput {
   idSecretaria?: string;
   nombreCiudadano?: string;
@@ -38,11 +40,11 @@ export async function POST(req: NextRequest) {
       console.log(`[Batch-Insert] ℹ️ Procesando ticket para secretaría: ${secId}`);
 
       await query(
-        `INSERT INTO tickets (
+        `INSERT INTO ${T} (
           id_ticket, numero_radicado, id_secretaria, nombre_ciudadano,
           documento_ciudadano, email_ciudadano, telefono_ciudadano, tipo_solicitud, asunto, contenido_raw,
-          estado, canal_origen, fecha_creacion, fecha_limite
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+          estado, canal_origen, fecha_creacion, fecha_limite, fecha_actualizacion
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
         [
           idTicket,
           numeroRadicado,
@@ -57,11 +59,10 @@ export async function POST(req: NextRequest) {
           'Pendiente',
           'Presencial',
           fechaCreacion,
-          fechaLimite
+          fechaLimite,
         ]
       );
       
-      // 3. Enviar correo de confirmación si el ciudadano proporcionó email
       if (emailCiudadanoLimpio && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCiudadanoLimpio)) {
         try {
           await sendConfirmationEmail(

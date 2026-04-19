@@ -2,11 +2,15 @@
 
 ## Qué hace
 
-El panel «Asistente IA» en el detalle de ticket llama a la ruta Next.js `POST /api/ia/regenerar`, que hace de **proxy** hacia el API Gateway de DuckClaw:
+El panel «Asistente IA» en el detalle de ticket llama a la ruta Next.js `POST /api/ia/regenerar`, que hace de **proxy** hacia el API Gateway de Duckclaw (p. ej. proceso PM2 **DuckClaw-Gateway**):
 
 `POST {DUCKCLAW_GATEWAY_URL}/api/v1/agent/PQRSD-Assistant/chat`
 
 El cuerpo sigue el contrato `ChatRequest` (mensaje compuesto con contexto del ticket + instrucción del funcionario, `tenant_id: PQRS`, `chat_id: crm-ticket-{idTicket}`).
+
+### Ingesta de correos e `callAiModel`
+
+El triaje de correos (`procesarCorreoConIA` en `src/services/iaTemplateService.ts`) usa el mismo endpoint vía **`callAiModel`** en `src/services/aiService.ts`: primero el gateway con `chat_id: crm-email-triage` y `user_id` derivado de `crm-email-ingesta`. Si el gateway no está configurado, la respuesta está vacía o falla la petición, se puede usar **OpenRouter** como respaldo si existe `OPENROUTER_API_KEY` y no se ha puesto `CRM_IA_OPENROUTER_FALLBACK=false`.
 
 ## Variables de entorno
 
@@ -14,7 +18,8 @@ El cuerpo sigue el contrato `ChatRequest` (mensaje compuesto con contexto del ti
 |----------|-----|
 | `DUCKCLAW_GATEWAY_URL` | Base del gateway (preferida en servidor). Ej: `http://127.0.0.1:8000` o URL Tailscale. |
 | `NEXT_PUBLIC_DUCKCLAW_GATEWAY_URL` | Opcional; misma URL para que el cliente sepa que el panel puede mostrarse. |
-| `NEXT_PUBLIC_API_URL` | Respaldo si no defines las anteriores. |
+| `NEXT_PUBLIC_API_URL` | Respaldo de la base URL (misma prioridad que en `gatewayBaseUrl()` en código). |
+| `CRM_IA_OPENROUTER_FALLBACK` | `true` por defecto: si el gateway falla o no hay URL, usar OpenRouter cuando haya `OPENROUTER_API_KEY`. `false` para exigir solo gateway. |
 | `NEXT_PUBLIC_IA_HABILITADA` | Debe ser `true` para mostrar el panel. |
 | `DUCKCLAW_GATEWAY_USER_ID_OVERRIDE` | Solo desarrollo: fuerza el `user_id` hacia el gateway si los usuarios mock (`usr-001`, …) no están en la whitelist PQRS. |
 

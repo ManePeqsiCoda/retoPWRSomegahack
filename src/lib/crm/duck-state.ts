@@ -18,7 +18,7 @@ export async function updateTicketEstadoInDuckDb(
   const w = await postGatewayDbWrite(base, {
     query: `
       UPDATE pqrsd_crm.tickets
-      SET estado = ?, updated_at = now()
+      SET estado = ?, fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id_ticket = ? AND id_secretaria = ?
     `.trim(),
     params: [nuevoEstado, idTicket, idSecretaria],
