@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Settings, FilePlus } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 
@@ -80,6 +80,12 @@ export default function Sidebar() {
           label="Bandeja de Entrada"
           href="/dashboard"
           active={pathname === '/dashboard'}
+        />
+        <NavItem
+          icon={FilePlus}
+          label="Radicación Manual"
+          href="/radicacion-manual"
+          active={pathname === '/radicacion-manual'}
         />
         <NavItem
           icon={BarChart3}
