@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const params: unknown[] = [];
     let paramIndex = 1;
 
-    if (idSecretaria) {
+    if (idSecretaria && idSecretaria !== 'all') {
       sql += ` AND id_secretaria = $${paramIndex++}`;
       params.push(idSecretaria);
     }

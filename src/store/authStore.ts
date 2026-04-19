@@ -20,6 +20,7 @@ interface AuthState {
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   login: (idUsuario: string) => Promise<void>;
   logout: () => void;
+  setUsuario: (usuario: Usuario) => void;
 }
 
 // ── Credenciales hardcodeadas ──
@@ -108,6 +109,9 @@ export const useAuthStore = create<AuthState>()(
           dataMode: 'mock',
           loginError: null,
         });
+      },
+      setUsuario: (usuario: Usuario) => {
+        set({ usuario });
       },
     }),
     {

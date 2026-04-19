@@ -102,8 +102,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ReadOnlyField label="Cargo" value="Gestor de Trámites y PQRSD" />
-          <ReadOnlyField label="Secretaría Asignada" value={usuario?.secretariaNombre || 'Secretaría de Salud'} />
+          <ReadOnlyField label="Cargo" value={usuario?.cargo || "Gestor de Trámites"} />
           <ReadOnlyField 
             label="ID de Usuario" 
             value={usuario?.idUsuario || 'USR-0982-MED'} 
@@ -111,15 +110,70 @@ export default function SettingsPage() {
           />
           <ReadOnlyField 
             label="Correo Institucional" 
-            value={`${usuario?.idUsuario?.toLowerCase() || 'funcionario'}@medellin.gov.co`} 
+            value={usuario?.idUsuario === 'admin-001' ? 'rraliadosteam@gmail.com' : 'funcionario@medellin.gov.co'} 
           />
+        </div>
+
+        {/* --- SIMULADOR DE ROLES (NUEVO) --- */}
+        <div className="mt-8 pt-8 border-t border-gov-gray-50 dark:border-dark-border">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gov-blue-100 dark:bg-dark-sidebar rounded-lg text-gov-blue-700 dark:text-dark-cyan">
+              <Shield size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-black text-gov-gray-900 dark:text-dark-text uppercase tracking-tight">Simulador de Roles y Dependencias</p>
+              <p className="text-[10px] text-gov-gray-500 dark:text-dark-muted">Cambia tu adscripción para la demo</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gov-gray-400 uppercase tracking-widest">Secretaría Activa</ts-label>
+                <select 
+                  value={usuario?.idSecretaria}
+                  onChange={(e) => {
+                    if (!usuario) return;
+                    const id = e.target.value;
+                    let nombreSec = 'Secretaría de Salud';
+                    if (id === 'sec-educacion') nombreSec = 'Secretaría de Educación';
+                    if (id === 'sec-movilidad') nombreSec = 'Secretaría de Movilidad';
+                    if (id === 'sec-cultura') nombreSec = 'Secretaría de Cultura';
+                    if (id === 'sec-desarrollo') nombreSec = 'Secretaría de Desarrollo';
+                    if (id === 'all') nombreSec = 'Distrito de Medellín (Global)';
+
+                    useAuthStore.getState().setUsuario({
+                      ...usuario,
+                      idSecretaria: id,
+                      secretariaNombre: nombreSec,
+                      rol: id === 'all' ? 'alcalde' : 'admin'
+                    });
+                  }}
+                  className="w-full px-4 py-3 bg-white dark:bg-dark-bg border border-gov-gray-200 dark:border-dark-border rounded-xl text-sm font-bold text-gov-gray-700 dark:text-dark-text focus:ring-2 focus:ring-gov-blue-500 outline-none transition-all"
+                >
+                  <option value="sec-salud">Secretaría de Salud</option>
+                  <option value="sec-educacion">Secretaría de Educación</option>
+                  <option value="sec-movilidad">Secretaría de Movilidad</option>
+                  <option value="sec-cultura">Secretaría de Cultura</option>
+                  <option value="sec-desarrollo">Secretaría de Desarrollo Económico</option>
+                  <option value="all">👑 ALCALDE (Ver Todas las Secretarías)</option>
+                </select>
+             </div>
+
+             <div className="p-4 bg-gov-blue-50/50 dark:bg-dark-accent/5 rounded-2xl border border-gov-blue-100 dark:border-dark-accent/10 flex items-center gap-3">
+                <div className="p-2 bg-white dark:bg-dark-surface rounded-lg shadow-sm">
+                   <Info size={16} className="text-gov-blue-600 dark:text-dark-cyan" />
+                </div>
+                <p className="text-[10px] text-gov-blue-800 dark:text-dark-muted leading-tight">
+                  Al cambiar a <strong>Alcalde</strong>, el sistema desactivará los filtros de dependencia y te permitirá supervisar los {usuario?.idSecretaria === 'all' ? '100%' : '50%'} de tickets de la ciudad.
+                </p>
+             </div>
+          </div>
         </div>
 
         <div className="mt-8 flex items-start gap-3 p-4 bg-gov-gray-50 dark:bg-dark-bg rounded-2xl border border-gov-gray-100 dark:border-dark-border">
           <Info size={16} className="text-gov-gray-400 shrink-0 mt-0.5" />
           <p className="text-[10px] text-gov-gray-500 dark:text-dark-muted leading-relaxed">
-            Los datos del perfil son gestionados centralmente por la <strong>Secretaría de Gestión Humana</strong>. 
-            Para solicitar cambios en su cargo o asignación de secretaría, por favor levante un ticket de soporte en la mesa de ayuda interna.
+            Esta sección de simulación permite validar el comportamiento del CRM en diferentes escenarios jerárquicos durante el hackathon.
           </p>
         </div>
       </SettingsSection>
