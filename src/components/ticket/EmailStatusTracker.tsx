@@ -9,10 +9,9 @@ import { formatearFechaRelativa } from '@/lib/utils';
 
 interface EmailStatusTrackerProps {
   idTicket:       string;
-  numeroRadicado: string;
 }
 
-export default function EmailStatusTracker({ idTicket, numeroRadicado }: EmailStatusTrackerProps) {
+export default function EmailStatusTracker({ idTicket }: EmailStatusTrackerProps) {
   const { historialSesion } = useEmailSender();
 
   // Combina: registros mock persistidos + registros nuevos de la sesión actual

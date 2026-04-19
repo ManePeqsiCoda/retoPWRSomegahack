@@ -93,7 +93,6 @@ export default function TicketDetailPage() {
             emailSendResult={emailSendResult}
             emailError={emailError}
             onRespuestaChange={setRespuestaActual}
-            onSubmit={submitRespuesta}
             onReset={resetRespuesta}
             onOpenConfirmModal={openConfirmModal}
             onCloseConfirmModal={closeConfirmModal}

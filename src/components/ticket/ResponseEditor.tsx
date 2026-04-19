@@ -10,7 +10,7 @@ import {
   SendHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TicketConUrgencia, EmailSendResult, Usuario } from '@/types';
+import { TicketConUrgencia, EmailSendResult } from '@/types';
 import { IAAssistantPanel } from './';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import { useAuthStore } from '@/store/authStore';
@@ -27,7 +27,6 @@ interface ResponseEditorProps {
   emailSendResult:     EmailSendResult | null;
   emailError:          string | null;
   onRespuestaChange: (texto: string) => void;
-  onSubmit: () => void;
   onReset: () => void;
   onOpenConfirmModal:  () => void;
   onCloseConfirmModal: () => void;
@@ -47,7 +46,6 @@ export default function ResponseEditor({
   emailSendResult,
   emailError,
   onRespuestaChange,
-  onSubmit,
   onReset,
   onOpenConfirmModal,
   onCloseConfirmModal,
