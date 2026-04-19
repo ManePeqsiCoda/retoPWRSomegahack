@@ -18,7 +18,7 @@ export const SECRETARIAS_MOCK: Secretaria[] = [
 ];
 
 // Memoria para hilos de conversación (Continuidad)
-export const MEMORIA_HILOS_MOCK: Record<string, { asunto: string, cuerpoOriginal: string, fecha: Date }> = {};
+export const MEMORIA_HILOS_MOCK: Record<string, { asunto: string, cuerpoOriginal: string, nombre?: string, fecha?: Date }> = {};
 
 // --- USUARIOS MOCK ---
 export const USUARIOS_MOCK: Usuario[] = [
