@@ -101,12 +101,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('[Ingesta-Error]', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
-  }
-}
-
-  } catch (error) {
-    console.error('[Ingesta-Error]', error);
     return NextResponse.json({ 
       error: 'Error interno al procesar el correo',
       details: error instanceof Error ? error.message : 'Unknown'
