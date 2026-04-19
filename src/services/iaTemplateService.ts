@@ -73,9 +73,16 @@ export async function procesarCorreoConIA(
     };
   }
 
-  // 2. EXTRACCIÓN DE DATOS
-  const tieneCedula = /\b\d{7,10}\b/.test(textoParaAnalizar);
-  const tieneNombre = nombreRemitente.split(' ').length >= 2 || textoParaAnalizar.includes('atentamente');
+  // 2. EXTRACCIÓN DE DATOS (Mejorada con Regex flexible)
+  // Detecta números de 7-10 dígitos permitiendo puntos, comas o espacios intermedios
+  const regexCedula = /\b(\d[\d\.\s,]{6,12}\d)\b/;
+  const matchCedula = textoParaAnalizar.match(regexCedula);
+  const tieneCedula = matchCedula !== null;
+
+  // Detección de nombre más inteligente
+  const tieneNombreEnCuerpo = /mi nombre es|soy|atentamente:?\s+([A-Z][a-z]+\s[A-Z][a-z]+)/i.test(textoParaAnalizar);
+  const nombreEsValido = nombreRemitente && nombreRemitente.split(' ').length >= 2;
+  const tieneNombre = nombreEsValido || tieneNombreEnCuerpo;
   
   const datosFaltantes = [];
   if (!tieneCedula) datosFaltantes.push('Número de identificación (Cédula)');
@@ -101,9 +108,10 @@ export async function procesarCorreoConIA(
     `;
   } else {
     // Si venimos de un contexto anterior, la respuesta debe ser de agradecimiento por completar los datos
+    const nombreParaUsar = tieneNombreEnCuerpo ? 'ciudadano(a)' : nombreRemitente;
     const intro = contextoAnterior 
-      ? `Gracias por completar su información, ${nombreRemitente}.`
-      : `Estimado(a) ${nombreRemitente}, espero que este mensaje le encuentre bien.`;
+      ? `Gracias por completar su información.`
+      : `Estimado(a) ${nombreParaUsar}, espero que este mensaje le encuentre bien.`;
 
     respuestaGenerada = `
       ${intro}
