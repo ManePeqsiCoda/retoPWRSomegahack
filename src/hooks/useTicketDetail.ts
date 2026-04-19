@@ -231,7 +231,12 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
       // 4. Enviar
       const result = await enviarRespuestaOficial(payload);
       setEmailSendResult(result);
-      setSubmitSuccess(true);
+      
+      if (result?.success) {
+        setSubmitSuccess(true);
+      } else {
+        setError(result?.error || 'No se pudo enviar el correo electrónico. Verifique la configuración SMTP.');
+      }
 
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al procesar el envío de la respuesta');

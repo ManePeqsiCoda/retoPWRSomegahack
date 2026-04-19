@@ -86,28 +86,33 @@ class NodemailerTransporter implements IEmailTransporter {
       }
     }
 
-    this.from = `"${process.env.SMTP_FROM_NAME ?? 'Alcaldía de Medellín'}" ` +
-                `<${process.env.SMTP_FROM_EMAIL ?? process.env.SMTP_USER}>`;
+    this.from = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER!;
+    const fromName = process.env.SMTP_FROM_NAME || 'Alcaldía de Medellín';
+
+    console.log(`[EmailService] 🛠️ Inicializando Nodemailer (Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT})`);
 
     this.transporter = nodemailer.createTransport({
       host:   process.env.SMTP_HOST!,
       port:   parseInt(process.env.SMTP_PORT!),
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros
       auth: {
         user: process.env.SMTP_USER!,
         pass: process.env.SMTP_PASS!,
       },
       tls: {
-        // En desarrollo con Gmail puede ser necesario
-        rejectUnauthorized: process.env.NODE_ENV === 'production',
+        // Importante para entornos serverless y Gmail
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
       },
     });
   }
 
   async send(options: EmailOptions): Promise<EmailSendResult> {
     try {
+      const fromName = process.env.SMTP_FROM_NAME || 'Alcaldía de Medellín';
+      
       const info = await this.transporter.sendMail({
-        from:    this.from,
+        from:    `"${fromName}" <${this.from}>`,
         to:      options.toName ? `"${options.toName}" <${options.to}>` : options.to,
         subject: options.subject,
         html:    options.html,
@@ -262,6 +267,7 @@ export async function sendConfirmationEmail(
  */
 export function createEmailTransporter(): IEmailTransporter {
   const mode = process.env.SMTP_MODE ?? 'mock';
+  console.log(`[EmailService] 📧 Modo de envío configurado: ${mode.toUpperCase()}`);
   if (mode === 'live') return new NodemailerTransporter();
   return new MockTransporter();
 }
