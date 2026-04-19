@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query, ensureSchema } from '@/lib/motherduck';
 
 /**
  * POST /api/admin/reset-db
  * ⚠️ PELIGRO: Limpia toda la base de datos para presentaciones limpias.
  */
-export async function POST(_req: NextRequest) {
+export async function POST() {
   try {
     // 1. Verificación básica de seguridad (opcional, pero recomendada)
     // En una app real usaríamos roles de admin, aquí confiamos en el acceso físico del presentador
