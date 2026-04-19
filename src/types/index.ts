@@ -57,6 +57,9 @@ export interface Ticket {
   /** Nombre del remitente o ciudadano que interpone la solicitud */
   nombreCiudadano: string;
 
+  /** Título o asunto de la solicitud (especialmente para Email) */
+  asunto: string;
+
   /**
    * Número de radicado oficial — Formato: MDE-YYYYMMDD-NNNNNN-COD
    * Identificador legal principal. Generado en el backend (DuckDB) al ingreso.
