@@ -40,7 +40,13 @@ export async function callAiModel(
       return '';
     }
 
-    const data = await res.json() as any;
+    const data = await res.json() as { 
+      choices?: { 
+        message?: { 
+          content?: string 
+        } 
+      }[] 
+    };
     return data.choices?.[0]?.message?.content?.trim() || '';
   } catch (error) {
     console.error('[AI-SERVICE] Error de red:', error);
