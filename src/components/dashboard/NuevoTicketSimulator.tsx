@@ -19,7 +19,11 @@ export default function NuevoTicketSimulator() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [tipo, setTipo] = useState<TipoSolicitud>('Peticion');
-  const [resultado, setResultado] = useState<{ radicado: string; simulado: boolean; ia?: any } | null>(null);
+  const [resultado, setResultado] = useState<{ 
+    radicado: string; 
+    simulado: boolean; 
+    ia?: { templateSelected: string; score: number } 
+  } | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [mode, setMode] = useState<SimulationMode>('form');
   const [asunto, setAsunto] = useState('');
@@ -110,7 +114,7 @@ export default function NuevoTicketSimulator() {
       } else {
         setLocalError(data.error || 'Error en la ingesta');
       }
-    } catch (err) {
+    } catch {
       setLocalError('Error de red al simular ingesta');
     }
   }

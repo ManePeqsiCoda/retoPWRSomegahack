@@ -18,7 +18,7 @@ export default function FilterBar() {
     setSearchQuery,
     resetFilters,
   } = useFilterStore();
-  const { refetch, isLoading } = useTickets();
+  const { refetch } = useTickets();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
