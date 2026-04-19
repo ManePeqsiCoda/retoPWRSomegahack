@@ -28,8 +28,18 @@ export async function POST(req: NextRequest) {
 
     // 3. CLASIFICACIÓN POR IA GovTech
     // Seleccionamos la mejor plantilla basada en el contenido
-    const { plantilla, score } = await analyzeAndSelectTemplate(cuerpo, asunto || '');
-    console.log(`[IA-Ingesta] Clasificación completada. Plantilla: ${plantilla.titulo} (Score: ${score})`);
+    const { plantilla, score, esBasura } = await analyzeAndSelectTemplate(cuerpo, asunto || '');
+    
+    if (esBasura) {
+      console.log(`[IA-Ingesta] 🗑️ Correo detectado como BASURA/SPAM. Ignorando.`);
+      return NextResponse.json({ 
+        success: false, 
+        error: 'El contenido no parece ser una solicitud PQRSD válida.',
+        esBasura: true 
+      });
+    }
+
+    console.log(`[IA-Ingesta] Clasificación completada. Plantilla: ${plantilla?.titulo} (Score: ${score})`);
 
     // 4. PERSISTENCIA EN DUCKDB (Mock)
     const nuevoTicket: Ticket = {
@@ -38,11 +48,11 @@ export async function POST(req: NextRequest) {
       idSecretaria,
       nombreCiudadano: nombre || 'Ciudadano Anónimo',
       emailCiudadano: remitente,
-      tipoSolicitud: plantilla.categoria, // Asignado por la IA
+      tipoSolicitud: plantilla?.categoria ?? 'Peticion', // Asignado por la IA
       asunto: asunto || 'Sin asunto',
       contenidoRaw: cuerpo,
       resumenIa: null,
-      respuestaSugerida: plantilla.contenido, // La IA deja el borrador listo para el humano
+      respuestaSugerida: plantilla?.contenido ?? null, // La IA deja el borrador listo para el humano
       estado: 'Pendiente',
       fechaCreacion: new Date().toISOString(),
       fechaLimite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 días
@@ -54,14 +64,15 @@ export async function POST(req: NextRequest) {
     console.log(`[Database] PQRSD registrado exitosamente: ${numeroRadicado}`);
 
     // 5. AUTORESPUESTA SMTP (Confirmación al Ciudadano)
-    const emailResult = await sendConfirmationEmail(remitente, numeroRadicado, nombre);
+    // Ahora enviamos también el contenido original
+    const emailResult = await sendConfirmationEmail(remitente, numeroRadicado, nombre, cuerpo);
 
     return NextResponse.json({
       success: true,
       idTicket,
       numeroRadicado,
       ia: {
-        templateSelected: plantilla.titulo,
+        templateSelected: plantilla?.titulo,
         score
       },
       email: {

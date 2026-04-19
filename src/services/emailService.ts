@@ -178,7 +178,8 @@ class NodemailerTransporter implements IEmailTransporter {
 export async function sendConfirmationEmail(
   emailDestino: string, 
   numeroRadicado: string,
-  nombreCiudadano: string = 'Ciudadano(a)'
+  nombreCiudadano: string = 'Ciudadano(a)',
+  contenidoOriginal: string = ''
 ): Promise<EmailSendResult> {
   const transporter = getEmailTransporter();
   const subject = `Confirmación de Recibido - PQRSD Radicado: ${numeroRadicado}`;
@@ -195,6 +196,11 @@ export async function sendConfirmationEmail(
         
         <div style="background-color: #F4F6F9; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0; border: 1px dashed #003DA5;">
           <span style="font-family: monospace; font-size: 24px; font-bold; color: #001E4E;">${numeroRadicado}</span>
+        </div>
+
+        <div style="margin: 24px 0; padding: 16px; background-color: #F8FAFC; border-left: 4px solid #003DA5; border-radius: 4px;">
+          <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: bold; color: #64748B; text-transform: uppercase;">Resumen de su solicitud:</p>
+          <p style="margin: 0; font-size: 14px; font-style: italic; color: #334155;">"${contenidoOriginal}"</p>
         </div>
         
         <p style="font-size: 14px; color: #6B7A90; line-height: 1.6;">
@@ -215,6 +221,7 @@ export async function sendConfirmationEmail(
     Alcaldía de Medellín - Confirmación de Radicado
     Estimado(a) ${nombreCiudadano},
     Hemos recibido su solicitud. Su número de radicado es: ${numeroRadicado}.
+    Contenido recibido: "${contenidoOriginal}"
     Responderemos en un plazo máximo de 15 días hábiles.
   `;
 

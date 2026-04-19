@@ -41,22 +41,32 @@ export const PLANTILLAS_PREESCRITAS: PlantillaRespuesta[] = [
 export async function analyzeAndSelectTemplate(
   contenidoRaw: string,
   asunto: string
-): Promise<{ plantilla: PlantillaRespuesta; score: number }> {
+): Promise<{ plantilla: PlantillaRespuesta | null; score: number; esBasura: boolean }> {
   const contentLower = (asunto + " " + contenidoRaw).toLowerCase();
 
-  // Lógica de "IA" simulada basada en keywords
+  // 1. DETECCIÓN DE BASURA / SPAM (Simulada)
+  // Si el mensaje es muy corto o contiene solo ruido
+  const esMuyCorto = contenidoRaw.trim().length < 15;
+  const palabrasBasura = ['hola', 'test', 'prueba', 'asdf', '123', 'comprar', 'cripto', 'oferta'];
+  const tienePalabrasBasura = palabrasBasura.some(p => contentLower === p || contentLower.includes('viagra'));
+
+  if (esMuyCorto || tienePalabrasBasura) {
+    return { plantilla: null, score: 1.0, esBasura: true };
+  }
+
+  // 2. CLASIFICACIÓN REAL
   if (contentLower.includes('hueco') || contentLower.includes('vial') || contentLower.includes('calle')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[0], score: 0.95 };
+    return { plantilla: PLANTILLAS_PREESCRITAS[0], score: 0.95, esBasura: false };
   }
   
   if (contentLower.includes('salud') || contentLower.includes('hospital') || contentLower.includes('cita')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[1], score: 0.92 };
+    return { plantilla: PLANTILLAS_PREESCRITAS[1], score: 0.92, esBasura: false };
   }
 
   if (contentLower.includes('impuesto') || contentLower.includes('pago') || contentLower.includes('cobro')) {
-    return { plantilla: PLANTILLAS_PREESCRITAS[3], score: 0.88 };
+    return { plantilla: PLANTILLAS_PREESCRITAS[3], score: 0.88, esBasura: false };
   }
 
   // Fallback a información general
-  return { plantilla: PLANTILLAS_PREESCRITAS[2], score: 0.5 };
+  return { plantilla: PLANTILLAS_PREESCRITAS[2], score: 0.5, esBasura: false };
 }
