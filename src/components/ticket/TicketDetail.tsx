@@ -216,7 +216,6 @@ export default function TicketDetail({
       {/* 5. HISTORIAL DE COMUNICACIONES */}
       <EmailStatusTracker
         idTicket={ticket.idTicket}
-        numeroRadicado={ticket.numeroRadicado}
       />
     </div>
   );
