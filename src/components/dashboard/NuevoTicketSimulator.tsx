@@ -90,11 +90,11 @@ export default function NuevoTicketSimulator() {
 
       {/* CUERPO */}
       {isExpanded && (
-        <div className="border border-[#0057B8]/20 border-t-0 rounded-b-xl bg-[#F4F6F9]/50 p-4 space-y-3 shadow-inner">
+        <div className="border border-[#0057B8]/20 border-t-0 rounded-b-xl bg-[#F4F6F9]/50 dark:bg-dark-surface/80 p-4 space-y-3 shadow-inner">
           {/* Aviso informativo */}
-          <div className="bg-[#FDF3D0] border border-[#D4A017]/30 rounded-lg p-2 flex gap-2 items-start">
+          <div className="bg-[#FDF3D0] dark:bg-dark-accent/10 border border-[#D4A017]/30 dark:border-dark-cyan/20 rounded-lg p-2 flex gap-2 items-start">
             <span className="text-xs">⚙️</span>
-            <p className="text-xs text-[#3D4A5C]">
+            <p className="text-xs text-[#3D4A5C] dark:text-dark-muted">
               Panel exclusivo para demos. En producción los tickets ingresan automáticamente desde el backend FastAPI + DuckDB.
             </p>
           </div>
@@ -107,7 +107,7 @@ export default function NuevoTicketSimulator() {
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 placeholder="Pedro Antonio Restrepo García"
-                className="w-full text-sm border border-[#E8ECF2] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white shadow-sm"
+                className="w-full text-sm border border-[#E8ECF2] dark:border-dark-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white dark:bg-dark-surface dark:text-white shadow-sm"
               />
             </div>
             <div>
@@ -116,39 +116,39 @@ export default function NuevoTicketSimulator() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ciudadano@gmail.com"
-                className="w-full text-sm border border-[#E8ECF2] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white shadow-sm"
+                className="w-full text-sm border border-[#E8ECF2] dark:border-dark-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white dark:bg-dark-surface dark:text-white shadow-sm"
               />
             </div>
             <div>
               <select 
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as TipoSolicitud)}
-                className="w-full text-sm border border-[#E8ECF2] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white shadow-sm"
+                className="w-full text-sm border border-[#E8ECF2] dark:border-dark-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0057B8] bg-white dark:bg-dark-surface dark:text-white shadow-sm"
               >
-                <option value="Peticion">Petición</option>
-                <option value="Queja">Queja</option>
-                <option value="Reclamo">Reclamo</option>
-                <option value="Sugerencia">Sugerencia</option>
-                <option value="Denuncia">Denuncia</option>
+                <option value="Peticion" className="dark:bg-dark-surface">Petición</option>
+                <option value="Queja" className="dark:bg-dark-surface">Queja</option>
+                <option value="Reclamo" className="dark:bg-dark-surface">Reclamo</option>
+                <option value="Sugerencia" className="dark:bg-dark-surface">Sugerencia</option>
+                <option value="Denuncia" className="dark:bg-dark-surface">Denuncia</option>
               </select>
             </div>
 
             {/* Resultado o Errores */}
             {(localError || apiError) && (
-              <div className="bg-[#FEF2F2] border border-[#DC2626]/30 rounded-lg p-3 flex items-center gap-2">
-                <AlertCircle className="text-[#DC2626] w-4 h-4" />
-                <p className="text-xs text-[#DC2626] font-medium">{localError || apiError}</p>
+              <div className="bg-[#FEF2F2] dark:bg-red-900/10 border border-[#DC2626]/30 dark:border-red-900/20 rounded-lg p-3 flex items-center gap-2">
+                <AlertCircle className="text-[#DC2626] dark:text-sem-red w-4 h-4" />
+                <p className="text-xs text-[#DC2626] dark:text-sem-red font-medium">{localError || apiError}</p>
               </div>
             )}
 
             {resultado && (
-              <div className="bg-[#ECFDF5] border border-[#00875A]/30 rounded-xl p-3 space-y-2 animate-in fade-in zoom-in duration-300">
+              <div className="bg-[#ECFDF5] dark:bg-green-900/10 border border-[#00875A]/30 dark:border-green-900/20 rounded-xl p-3 space-y-2 animate-in fade-in zoom-in duration-300">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-[#00875A] w-5 h-5" />
-                  <span className="text-sm font-semibold text-[#00875A]">Ticket registrado exitosamente</span>
+                  <CheckCircle2 className="text-[#00875A] dark:text-sem-green w-5 h-5" />
+                  <span className="text-sm font-semibold text-[#00875A] dark:text-sem-green">Ticket registrado exitosamente</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="font-mono bg-[#001E4E] text-[#00A3E0] px-3 py-1 rounded-lg text-xs">
+                  <div className="font-mono bg-[#001E4E] text-[#00A3E0] px-3 py-1 rounded-lg text-xs border border-white/10">
                     {resultado.radicado}
                   </div>
                   {resultado.simulado ? (
@@ -158,7 +158,7 @@ export default function NuevoTicketSimulator() {
                   )}
                 </div>
                 {!resultado.simulado && (
-                  <p className="text-[10px] text-[#00875A]">Se ha enviado una notificación de radicado a la bandeja del ciudadano.</p>
+                  <p className="text-[10px] text-[#00875A] dark:text-sem-green/80">Se ha enviado una notificación de radicado a la bandeja del ciudadano.</p>
                 )}
               </div>
             )}
