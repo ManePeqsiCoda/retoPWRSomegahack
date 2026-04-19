@@ -50,6 +50,8 @@ export default function TicketDetail({
   ticket,
   resumenCargando = false,
   resumenError = null,
+  onCambiarEstado,
+  isSubmitting = false,
 }: TicketDetailProps) {
   const secretaria = SECRETARIAS_MOCK.find(s => s.idSecretaria === ticket.idSecretaria);
   

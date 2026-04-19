@@ -29,6 +29,7 @@ interface UseTicketDetailReturn {
   setRespuestaActual: (texto: string) => void;
   submitRespuesta: () => Promise<void>;
   resetRespuesta: () => void;
+  cambiarEstado: (nuevoEstado: any) => Promise<void>;
 }
 
 export function useTicketDetail(idTicket: string): UseTicketDetailReturn {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useIdSecretariaActivo } from '@/store/authStore';
+import { useIdSecretariaActivo, useAuthStore, useDataMode } from '@/store/authStore';
 import { useFilterStore } from '@/store/filterStore';
 import { getTicketsBySecretaria } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
@@ -20,7 +20,7 @@ export function useTickets(): UseTicketsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const idSecretaria = useIdSecretariaActivo();
-  const dataMode = useAuthStore(s => s.dataMode);
+  const dataMode = useDataMode();
   const { 
     estadoFilter, 
     tipoFilter, 
