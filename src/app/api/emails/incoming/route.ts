@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       tipoSolicitud: plantilla.categoria, // Asignado por la IA
       asunto: asunto || 'Sin asunto',
       contenidoRaw: cuerpo,
+      resumenIa: null,
       respuestaSugerida: plantilla.contenido, // La IA deja el borrador listo para el humano
       estado: 'Pendiente',
       fechaCreacion: new Date().toISOString(),
