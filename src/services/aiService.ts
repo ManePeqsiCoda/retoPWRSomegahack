@@ -7,7 +7,7 @@ export async function callAiModel(
   temperature: number = 0.3
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.NEXT_PUBLIC_OPENROUTER_MODEL || 'arcee-ai/trinity-large-preview:free';
+  const model = process.env.NEXT_PUBLIC_OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free';
 
   if (!apiKey) {
     console.error('[AI-SERVICE] Error: OPENROUTER_API_KEY no configurada');

@@ -110,14 +110,34 @@ export async function procesarCorreoConIA(
     return result;
 
   } catch (error) {
-    console.error('[IA-Triaje] ❌ Fallo en procesamiento:', error);
+    console.error('[IA-Triaje] ❌ Fallo en procesamiento LLM, activando Rescate por Patrones:', error);
     
+    // --- LÓGICA DE RESCATE (Pattern Matching Fallback) ---
+    // Si la IA falla (429, 500, etc), intentamos extraer datos básicos por Regex
+    let nombreRescate = 'No encontrado';
+    let cedulaRescate = 'No encontrada';
+    
+    // Regex para nombres comunes: "me llamo X", "mi nombre es X", "soy X"
+    const nameMatch = contenidoRaw.match(/(?:me llamo|mi nombre es|soy)\s+([A-Za-z\s]{3,40})/i);
+    if (nameMatch) nombreRescate = nameMatch[1].trim();
+
+    // Regex para cédulas: "cedula X", "cc X", "identificado con X"
+    const idMatch = contenidoRaw.match(/(?:cedula|cc|identificacion|identificado con)\s+([0-9.\s]{6,15})/i);
+    if (idMatch) cedulaRescate = idMatch[1].trim().replace(/\./g, '');
+
+    const faltanDatos = nombreRescate === 'No encontrado' || cedulaRescate === 'No encontrada';
+
     return {
       esBasura: false,
-      faltanDatos: true,
-      datosFaltantes: ['Cédula', 'Nombre completo'],
-      nombreExtraido: 'No encontrado',
-      respuestaGenerada: 'Cordial saludo. Hemos recibido su comunicación. Sin embargo, para asignar un número de radicado oficial, requerimos que nos proporcione su nombre completo y número de cédula en el cuerpo del mensaje. Quedamos atentos.',
+      faltanDatos,
+      datosFaltantes: [
+        ...(nombreRescate === 'No encontrado' ? ['Nombre completo'] : []),
+        ...(cedulaRescate === 'No encontrada' ? ['Cédula'] : [])
+      ],
+      nombreExtraido: nombreRescate,
+      respuestaGenerada: faltanDatos 
+        ? 'Cordial saludo. Hemos recibido su comunicación. Sin embargo, para asignar un número de radicado oficial, requerimos que nos proporcione su nombre completo y número de cédula en el cuerpo del mensaje. Quedamos atentos.'
+        : `Cordial saludo ${nombreRescate}. Hemos recibido su solicitud exitosamente. Se ha iniciado el proceso de radicación bajo la normativa vigente.`,
       categoriaSugerida: 'Peticion'
     };
   }
