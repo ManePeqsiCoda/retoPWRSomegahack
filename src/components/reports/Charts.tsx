@@ -14,7 +14,6 @@ import {
   Cell,
   AreaChart,
   Area,
-  LineChart,
   Line
 } from 'recharts';
 
