@@ -96,7 +96,7 @@ export function useEmailSender(): UseEmailSenderReturn {
         ? 'Sin conexión. Verifica tu conexión a internet.' 
         : (err as Error).message;
       setError(message);
-      return { success: false, error: message };
+      return null;
     } finally {
       setIsSendingRespuesta(false);
     }
