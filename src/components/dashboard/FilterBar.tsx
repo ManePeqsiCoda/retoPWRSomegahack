@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, RefreshCw } from 'lucide-react';
+import { useTickets } from '@/hooks/useTickets';
 import { useFilterStore } from '@/store/filterStore';
 import { TicketEstado, TipoSolicitud, NivelUrgencia } from '@/types';
 
@@ -17,6 +18,8 @@ export default function FilterBar() {
     setSearchQuery,
     resetFilters,
   } = useFilterStore();
+  const { refetch, isLoading } = useTickets();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [localSearch, setLocalSearch] = useState(searchQuery);
 
@@ -119,17 +122,32 @@ export default function FilterBar() {
         </select>
       </div>
 
-      {/* 5. BOTÓN RESET */}
-      {isAnyFilterActive && (
+      {/* 5. BOTÓN RESET Y SYNC */}
+      <div className="flex items-center gap-2">
+        {isAnyFilterActive && (
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gov-gray-500 dark:text-dark-muted hover:text-gov-blue-700 dark:hover:text-dark-cyan hover:bg-gov-gray-50 dark:hover:bg-dark-border rounded-lg transition-colors border border-transparent hover:border-gov-gray-200 dark:hover:border-dark-border"
+            aria-label="Limpiar todos los filtros"
+          >
+            <X size={14} />
+            <span>Limpiar</span>
+          </button>
+        )}
+
         <button
-          onClick={resetFilters}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gov-gray-500 dark:text-dark-muted hover:text-gov-blue-700 dark:hover:text-dark-cyan hover:bg-gov-gray-50 dark:hover:bg-dark-border rounded-lg transition-colors border border-transparent hover:border-gov-gray-200 dark:hover:border-dark-border"
-          aria-label="Limpiar todos los filtros"
+          onClick={async () => {
+            setIsRefreshing(true);
+            await refetch();
+            setTimeout(() => setIsRefreshing(false), 500);
+          }}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gov-blue-700 dark:text-dark-cyan hover:bg-gov-blue-50 dark:hover:bg-dark-accent/10 rounded-lg transition-all border border-gov-blue-200 dark:border-dark-cyan/20"
+          title="Sincronizar con el servidor de correos"
         >
-          <X size={14} />
-          <span>Limpiar</span>
+          <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+          <span>Sincronizar</span>
         </button>
-      )}
+      </div>
     </div>
   );
 }

@@ -172,6 +172,63 @@ class NodemailerTransporter implements IEmailTransporter {
 }
 
 /**
+ * FUNCIONES DE ALTO NIVEL PARA NEGOCIO
+ */
+
+export async function sendConfirmationEmail(
+  emailDestino: string, 
+  numeroRadicado: string,
+  nombreCiudadano: string = 'Ciudadano(a)'
+): Promise<EmailSendResult> {
+  const transporter = getEmailTransporter();
+  const subject = `Confirmación de Recibido - PQRSD Radicado: ${numeroRadicado}`;
+  
+  const html = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1A2332; max-width: 600px; margin: 0 auto; border: 1px solid #E8ECF2; border-radius: 12px; overflow: hidden;">
+      <div style="background-color: #003DA5; padding: 24px; text-align: center;">
+        <h1 style="color: #FFFFFF; margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;">Alcaldía de Medellín</h1>
+      </div>
+      <div style="padding: 32px;">
+        <h2 style="color: #003DA5; margin-top: 0;">Confirmación de Radicado</h2>
+        <p>Estimado(a) <strong>${nombreCiudadano}</strong>,</p>
+        <p>Hemos recibido su solicitud de manera exitosa. Se le ha asignado el siguiente número de radicado oficial para realizar su seguimiento:</p>
+        
+        <div style="background-color: #F4F6F9; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0; border: 1px dashed #003DA5;">
+          <span style="font-family: monospace; font-size: 24px; font-bold; color: #001E4E;">${numeroRadicado}</span>
+        </div>
+        
+        <p style="font-size: 14px; color: #6B7A90; line-height: 1.6;">
+          De acuerdo con la Ley 1755 de 2015, daremos respuesta a su PQRSD en un plazo máximo de <strong>15 días hábiles</strong>. Usted podrá consultar el estado de su trámite en el portal oficial de la Alcaldía con el número arriba mencionado.
+        </p>
+        
+        <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #E8ECF2;">
+          <p style="font-size: 12px; color: #B8C2D0; margin: 0;">
+            Este es un correo automático, por favor no responda a este mensaje.<br>
+            <strong>Distrito Especial de Ciencia, Tecnología e Innovación de Medellín.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const text = `
+    Alcaldía de Medellín - Confirmación de Radicado
+    Estimado(a) ${nombreCiudadano},
+    Hemos recibido su solicitud. Su número de radicado es: ${numeroRadicado}.
+    Responderemos en un plazo máximo de 15 días hábiles.
+  `;
+
+  return transporter.send({
+    to: emailDestino,
+    subject,
+    html,
+    text,
+    numeroRadicado,
+    tipoEmail: 'confirmacion_radicado'
+  });
+}
+
+/**
  * FACTORY + SINGLETON
  * Crea el transporter correcto según SMTP_MODE.
  */
