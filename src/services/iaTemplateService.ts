@@ -63,9 +63,10 @@ export async function procesarCorreoConIA(
     INSTRUCCIONES:
     1. Determina si el correo es basura (spam, publicidad, mensajes sin sentido, pruebas de texto tipo "asdf").
     2. Busca datos de identidad: El ciudadano DEBE proporcionar su Nombre Completo y su Cédula de Ciudadanía (ID).
+       IMPORTANTE: Acepta cédulas con puntos, comas o espacios (ej. 1.023.456.789 o 1 023 456 789 son VÁLIDOS). No la marques como faltante si está presente en cualquier formato numérico.
     3. Clasifica la solicitud en una de estas categorías: Peticion, Queja, Reclamo, Sugerencia, Denuncia.
     4. Genera una respuesta:
-       - Si faltan datos: Solicita los datos faltantes amablemente.
+       - Si faltan datos: Solicita los datos faltantes amablemente especificando cuáles faltan.
        - Si el mensaje es válido: Redacta una respuesta humana, empática y profesional. Menciona que se dará trámite en un plazo de 15 días según la ley.
     
     DEBES RESPONDER EXCLUSIVAMENTE EN FORMATO JSON:
