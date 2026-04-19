@@ -219,7 +219,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
       const payload: RespuestaEmailPayload = {
         idTicket:          ticket.idTicket,
         numeroRadicado:    ticket.numeroRadicado,
-        emailCiudadano:    ticket.emailCiudadano,
+        emailCiudadano:    emailLimpio,
         nombreCiudadano:   ticket.nombreCiudadano,
         tipoSolicitud:     ticket.tipoSolicitud,
         secretariaNombre:  secretariaNombre,
