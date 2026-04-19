@@ -91,7 +91,7 @@ class NodemailerTransporter implements IEmailTransporter {
     
     console.log(`[EmailService] 🛠️ Inicializando Nodemailer (${isGmail ? 'Servicio: GMAIL' : `Host: ${process.env.SMTP_HOST}`})`);
 
-    const config: any = isGmail ? {
+    const config = isGmail ? {
       service: 'gmail',
       auth: {
         user: process.env.SMTP_USER!,
@@ -149,7 +149,7 @@ class NodemailerTransporter implements IEmailTransporter {
         },
       };
     } catch (err) {
-      const errorObj = err as any;
+      const errorObj = err as { message?: string; code?: string; response?: string };
       const msg = errorObj.message || 'Error SMTP desconocido';
       const code = errorObj.code || 'N/A';
       

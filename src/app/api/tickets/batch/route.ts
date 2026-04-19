@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, ensureSchema } from '@/lib/motherduck';
 import { generarNumeroRadicado } from '@/lib/radicado';
 
+interface ManualTicketInput {
+  idSecretaria?: string;
+  nombreCiudadano?: string;
+  emailCiudadano?: string;
+  tipoSolicitud?: string;
+  asunto?: string;
+  contenidoRaw: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { tickets } = await req.json();
+    const { tickets }: { tickets: ManualTicketInput[] } = await req.json();
 
     if (!Array.isArray(tickets) || tickets.length === 0) {
       return NextResponse.json({ error: 'Se requiere un array de tickets' }, { status: 400 });

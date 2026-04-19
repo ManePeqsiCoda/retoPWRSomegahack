@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   Building
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ManualTicketForm {
   id: string; // ID temporal para manejo de estado
