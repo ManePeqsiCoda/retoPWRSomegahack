@@ -63,14 +63,14 @@ export async function procesarCorreoConIA(
     
     INSTRUCCIONES CRÍTICAS:
     1. Determina si el correo es basura (spam, publicidad, mensajes sin sentido).
-    2. EXTRACCIÓN DE IDENTIDAD: Ignora el nombre del remitente del email (${nombreRemitente}). 
-       Busca dentro del CUERPO DEL CORREO quién dice ser el ciudadano (ej. "Mi nombre es...", "Cordial saludo, soy...", o la firma al final).
-       Si no encuentras un nombre claro dentro del cuerpo, márcalo como dato faltante.
-    3. Busca la Cédula de Ciudadanía (ID). Acepta cualquier formato (con puntos, espacios, etc.).
+    2. EXTRACCIÓN DE IDENTIDAD: Busca el nombre real del ciudadano. 
+       Prioriza el nombre que aparezca dentro del CUERPO DEL CORREO (ej. "Mi nombre es...", "Cordial saludo, soy...", o la firma al final).
+       Si no hay un nombre claro en el cuerpo, utiliza el nombre del remitente proporcionado (${nombreRemitente}).
+    3. EXTRACCIÓN DE CÉDULA: Busca la Cédula de Ciudadanía (ID). Acepta cualquier formato (con puntos, espacios, etc.).
     4. Clasifica la solicitud: Peticion, Queja, Reclamo, Sugerencia, Denuncia.
     5. Genera una respuesta:
-       - Si faltan datos: Solicita los datos faltantes amablemente.
-       - Si es válido: Redacta una respuesta humana y empática usando el NOMBRE EXTRAÍDO DEL CUERPO. Menciona el plazo de 15 días hábiles.
+       - Si faltan datos: Solicita amablemente el dato específico (ej. "Nos falta tu cédula").
+       - Si es válido: Redacta una respuesta humana y empática. Menciona el plazo de 15 días hábiles.
     
     DEBES RESPONDER EXCLUSIVAMENTE EN FORMATO JSON:
     {

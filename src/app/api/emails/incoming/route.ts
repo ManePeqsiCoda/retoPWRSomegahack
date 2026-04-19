@@ -70,12 +70,19 @@ export async function POST(req: NextRequest) {
     if (analisis.faltanDatos) {
       console.log(`[IA-Ingesta] ⚠️ Faltan datos: ${analisis.datosFaltantes.join(', ')}`);
       
-      // Enviamos correo pidiendo los datos
+      // 1. Guardar en memoria para mantener continuidad cuando el usuario responda con los datos
+      MEMORIA_HILOS_MOCK[remitente] = {
+        asunto: asunto || 'Sin asunto',
+        cuerpoOriginal: cuerpo,
+        nombre: nombreParaTicket
+      };
+
+      // Enviamos correo pidiendo los datos, pero incluyendo lo que recibimos para que el usuario sepa que llegó
       await sendConfirmationEmail(
         remitente, 
         'EN TRÁMITE', 
         nombreParaTicket, 
-        analisis.respuestaGenerada
+        `${analisis.respuestaGenerada}\n\n---\nTU MENSAJE RECIBIDO:\n${cuerpo}`
       );
 
       return NextResponse.json({ 
