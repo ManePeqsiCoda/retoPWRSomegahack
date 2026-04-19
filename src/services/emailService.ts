@@ -87,8 +87,6 @@ class NodemailerTransporter implements IEmailTransporter {
     }
 
     this.from = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER!;
-    const fromName = process.env.SMTP_FROM_NAME || 'Alcaldía de Medellín';
-
     console.log(`[EmailService] 🛠️ Inicializando Nodemailer (Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT})`);
 
     this.transporter = nodemailer.createTransport({
