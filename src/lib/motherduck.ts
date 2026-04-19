@@ -20,7 +20,7 @@ function getPool(): Pool {
   if (pool) return pool;
 
   const token = process.env.MOTHERDUCK_TOKEN;
-  const database = process.env.MOTHERDUCK_DB || 'crm_pqrsd';
+  const database = process.env.MOTHERDUCK_DB || 'crm-pqrsd';
 
   if (!token) {
     throw new Error(

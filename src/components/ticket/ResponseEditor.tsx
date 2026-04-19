@@ -159,23 +159,23 @@ export default function ResponseEditor({
       {/* 6. FEEDBACK DE ÉXITO O ERROR */}
       {submitSuccess && (
         <div className={cn(
-          "rounded-xl p-4 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300",
+          "rounded-xl p-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300",
           ticket.emailCiudadano
-            ? 'bg-sem-green-bg border border-sem-green/30'
-            : 'bg-gov-blue-100 border border-gov-blue-300'
+            ? 'bg-sem-green-bg dark:bg-sem-green/10 border border-sem-green/30 dark:border-sem-green/20'
+            : 'bg-gov-blue-50 dark:bg-gov-blue-900/20 border border-gov-blue-200 dark:border-gov-blue-800'
         )}>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} className={ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-700'} />
+            <CheckCircle2 size={16} className={ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-600 dark:text-gov-blue-400'} />
             <span className={cn(
               "text-sm font-bold",
-              ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-700'
+              ticket.emailCiudadano ? 'text-sem-green' : 'text-gov-blue-700 dark:text-gov-blue-400'
             )}>
               {ticket.emailCiudadano ? 'Respuesta enviada exitosamente' : 'Ticket actualizado'}
             </span>
           </div>
 
           {ticket.emailCiudadano && emailSendResult && (
-            <p className="text-xs text-gov-gray-600 pl-6">
+            <p className="text-xs text-sem-green/80 dark:text-sem-green/70 pl-6 font-medium leading-relaxed">
               {emailSendResult.simulado
                 ? '✉️ Email simulado (SMTP_MODE=mock). Revisa la terminal de Next.js para ver el contenido.'
                 : `✉️ Correo enviado a ${ticket.emailCiudadano}. ID: ${emailSendResult.messageId}`
@@ -184,13 +184,13 @@ export default function ResponseEditor({
           )}
 
           {emailSendResult?.simulado && (
-            <p className="text-xs text-[#D4A017] pl-6 font-medium">
+            <p className="text-xs text-gov-gold-600 dark:text-gov-gold-400 pl-6 font-bold uppercase tracking-wider">
               ⚙️ Cambia SMTP_MODE=live en .env.local para envíos reales con Gmail.
             </p>
           )}
 
           {!ticket.emailCiudadano && (
-            <p className="text-xs text-gov-blue-600 pl-6 font-medium">
+            <p className="text-xs text-gov-blue-600/80 dark:text-gov-blue-400/80 pl-6 font-medium">
               Solicitud anónima — sin notificación por correo (Decreto 1166/2016).
             </p>
           )}

@@ -15,6 +15,7 @@ import { useTickets } from '@/hooks/useTickets';
 type SimulationMode = 'form' | 'email';
 
 export default function NuevoTicketSimulator() {
+  const { dataMode } = useAuthStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -31,6 +32,8 @@ export default function NuevoTicketSimulator() {
 
   const { refetch } = useTickets();
   const { enviarConfirmacion, isSendingConfirmacion, error: apiError, limpiarError } = useEmailSender();
+
+  if (dataMode === 'live') return null;
 
   async function handleSimular() {
     setLocalError(null);
