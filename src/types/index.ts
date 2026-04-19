@@ -120,7 +120,7 @@ export interface Usuario {
   idSecretaria: string;
   secretariaNombre: string;
   /** Rol del usuario para permisos adicionales */
-  rol: 'admin' | 'funcionario';
+  rol: 'admin' | 'funcionario' | 'alcalde';
   /** Iniciales para el avatar (ej: "CA" para "Carlos Arturo") */
   initials: string;
 }
