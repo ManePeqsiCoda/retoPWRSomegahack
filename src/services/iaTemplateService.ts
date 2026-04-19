@@ -81,6 +81,7 @@ export async function procesarCorreoConIA(
     "${contenidoRaw}"
     
     (Contexto Adicional: Asunto: ${asunto})
+    ${contextoAnterior ? `\n--- HISTORIAL PREVIO ---\nAsunto original: ${contextoAnterior.asunto}\nMensaje original: ${contextoAnterior.cuerpoOriginal}` : ''}
   `;
 
   console.log(`[IA-Triaje] 🧠 Analizando correo de: ${nombreRemitente}...`);
