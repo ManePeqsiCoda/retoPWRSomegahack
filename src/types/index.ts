@@ -58,7 +58,7 @@ export interface Ticket {
   nombreCiudadano: string;
 
   /** Título o asunto de la solicitud (especialmente para Email) */
-  asunto: string;
+  asunto?: string;
 
   /**
    * Número de radicado oficial — Formato: MDE-YYYYMMDD-NNNNNN-COD
