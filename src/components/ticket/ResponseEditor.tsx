@@ -207,7 +207,7 @@ export default function ResponseEditor({
       )}
 
       {/* 5. BARRA DE ACCIONES */}
-      <div className="pt-2 flex items-center justify-between border-t border-gov-gray-100 dark:border-dark-border pt-6">
+      <div className="flex items-center justify-between border-t border-gov-gray-100 dark:border-dark-border pt-6">
         <div>
           {respuestaSugerida !== null && hasUnsavedChanges && !submitSuccess && (
             <button

@@ -34,6 +34,9 @@ export const PLANTILLAS_PREESCRITAS: PlantillaRespuesta[] = [
   },
 ];
 
+
+import { callAiModel } from './aiService';
+
 export interface ResultadoProcesamientoIA {
   esBasura: boolean;
   faltanDatos: boolean;
@@ -43,8 +46,8 @@ export interface ResultadoProcesamientoIA {
 }
 
 /**
- * Motor de decisión IA para correos entrantes.
- * Simula un modelo de lenguaje (LLM) que analiza el contexto completo.
+ * Motor de decisión inteligente basado en modelos de lenguaje (LLM).
+ * Utiliza OpenRouter para analizar, extraer datos y redactar respuestas.
  */
 export async function procesarCorreoConIA(
   contenidoRaw: string,
@@ -52,84 +55,61 @@ export async function procesarCorreoConIA(
   nombreRemitente: string,
   contextoAnterior?: { asunto: string, cuerpoOriginal: string }
 ): Promise<ResultadoProcesamientoIA> {
-  // Fusionar contexto si existe (Continuidad)
-  const textoParaAnalizar = contextoAnterior 
-    ? `HISTORIAL: ${contextoAnterior.asunto} - ${contextoAnterior.cuerpoOriginal}\nNUEVO MENSAJE: ${contenidoRaw}`
-    : contenidoRaw;
+  
+  const systemPrompt = `
+    Eres el Agente de Triaje Inteligente de la Alcaldía de Medellín. 
+    Tu objetivo es analizar correos electrónicos entrantes y tomar decisiones de radicación.
+    
+    INSTRUCCIONES:
+    1. Determina si el correo es basura (spam, publicidad, mensajes sin sentido, pruebas de texto tipo "asdf").
+    2. Busca datos de identidad: El ciudadano DEBE proporcionar su Nombre Completo y su Cédula de Ciudadanía (ID).
+    3. Clasifica la solicitud en una de estas categorías: Peticion, Queja, Reclamo, Sugerencia, Denuncia.
+    4. Genera una respuesta:
+       - Si faltan datos: Solicita los datos faltantes amablemente.
+       - Si el mensaje es válido: Redacta una respuesta humana, empática y profesional. Menciona que se dará trámite en un plazo de 15 días según la ley.
+    
+    DEBES RESPONDER EXCLUSIVAMENTE EN FORMATO JSON:
+    {
+      "esBasura": boolean,
+      "faltanDatos": boolean,
+      "datosFaltantes": string[],
+      "respuestaGenerada": string,
+      "categoriaSugerida": "Peticion" | "Queja" | "Reclamo" | "Sugerencia" | "Denuncia"
+    }
+  `;
 
-  const contentLower = (asunto + " " + textoParaAnalizar).toLowerCase();
-  
-  // 1. DETECCIÓN DE BASURA
-  const esBasura = !contextoAnterior && (contenidoRaw.length < 15 || 
-                  /comprar|viagra|cripto|oferta única|test prueba/i.test(contentLower));
-  
-  if (esBasura) {
-    return { 
-      esBasura: true, 
-      faltanDatos: false, 
-      datosFaltantes: [], 
-      respuestaGenerada: '', 
-      categoriaSugerida: 'Peticion' 
+  const userPrompt = `
+    DATOS DEL REMITENTE: ${nombreRemitente}
+    ASUNTO: ${asunto}
+    ${contextoAnterior ? `HISTORIAL PREVIO: ${contextoAnterior.asunto} - ${contextoAnterior.cuerpoOriginal}` : ''}
+    
+    CONTENIDO DEL CORREO:
+    "${contenidoRaw}"
+  `;
+
+  try {
+    const aiResponse = await callAiModel(systemPrompt, userPrompt);
+    
+    if (!aiResponse) {
+      throw new Error('No se recibió respuesta del modelo de IA');
+    }
+
+    // Limpiar posibles etiquetas de markdown del JSON
+    const jsonStr = aiResponse.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(jsonStr) as ResultadoProcesamientoIA;
+
+    return result;
+
+  } catch (error) {
+    console.error('[IA-PROCESSOR] Fallo en la llamada a IA, usando fallback básico:', error);
+    
+    // Fallback de emergencia si la IA falla (para que el sistema no se rompa)
+    return {
+      esBasura: false,
+      faltanDatos: !contenidoRaw.includes('1'), // Heurística muy básica
+      datosFaltantes: ['Identificación (Cédula)'],
+      respuestaGenerada: 'Cordial saludo. Hemos recibido su mensaje. Sin embargo, para proceder, requerimos que nos proporcione su número de documento. Gracias.',
+      categoriaSugerida: 'Peticion'
     };
   }
-
-  // 2. EXTRACCIÓN DE DATOS (Mejorada con Regex flexible)
-  // Detecta números de 7-10 dígitos permitiendo puntos, comas o espacios intermedios
-  const regexCedula = /\b(\d[\d\.\s,]{6,12}\d)\b/;
-  const matchCedula = textoParaAnalizar.match(regexCedula);
-  const tieneCedula = matchCedula !== null;
-
-  // Detección de nombre más inteligente
-  const tieneNombreEnCuerpo = /mi nombre es|soy|atentamente:?\s+([A-Z][a-z]+\s[A-Z][a-z]+)/i.test(textoParaAnalizar);
-  const nombreEsValido = nombreRemitente && nombreRemitente.split(' ').length >= 2;
-  const tieneNombre = nombreEsValido || tieneNombreEnCuerpo;
-  
-  const datosFaltantes = [];
-  if (!tieneCedula) datosFaltantes.push('Número de identificación (Cédula)');
-  if (!tieneNombre) datosFaltantes.push('Nombre completo');
-
-  const faltanDatos = datosFaltantes.length > 0;
-
-  // 3. GENERACIÓN DE RESPUESTA
-  let respuestaGenerada = "";
-  let categoria: TipoSolicitud = 'Peticion';
-
-  if (contentLower.includes('hueco') || contentLower.includes('calle')) categoria = 'Queja';
-  else if (contentLower.includes('salud') || contentLower.includes('hospital')) categoria = 'Peticion';
-
-  if (faltanDatos) {
-    respuestaGenerada = `
-      Cordial saludo, ciudadano(a). 
-      Hemos recibido su mensaje respecto a "${asunto || (contextoAnterior?.asunto) || 'su solicitud'}", pero para poder radicarlo oficialmente, aún necesitamos:
-      
-      ${datosFaltantes.map(d => `- ${d}`).join('\n')}
-      
-      Por favor, proporciónenos estos datos respondiendo a este correo.
-    `;
-  } else {
-    // Si venimos de un contexto anterior, la respuesta debe ser de agradecimiento por completar los datos
-    const nombreParaUsar = tieneNombreEnCuerpo ? 'ciudadano(a)' : nombreRemitente;
-    const intro = contextoAnterior 
-      ? `Gracias por completar su información.`
-      : `Estimado(a) ${nombreParaUsar}, espero que este mensaje le encuentre bien.`;
-
-    respuestaGenerada = `
-      ${intro}
-      
-      He procesado su solicitud sobre "${asunto || (contextoAnterior?.asunto) || 'su caso'}". Su radicación se ha completado exitosamente tras validar su identidad.
-      
-      Le recordamos que, conforme a la Ley 1755 de 2015, el Distrito de Medellín dispone de un plazo máximo de 15 días hábiles para emitir una respuesta de fondo.
-      
-      Atentamente,
-      IA de Atención Ciudadana - Alcaldía de Medellín
-    `;
-  }
-
-  return {
-    esBasura,
-    faltanDatos,
-    datosFaltantes,
-    respuestaGenerada: respuestaGenerada.trim(),
-    categoriaSugerida: categoria
-  };
 }
