@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useIdSecretariaActivo, useAuthStore } from '@/store/authStore';
+import { useIdSecretariaActivo, useAuthStore, useDataMode } from '@/store/authStore';
 import { getTicketById, actualizarRespuesta } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
 import { TicketConUrgencia, RespuestaEmailPayload, EmailSendResult } from '@/types';
@@ -46,7 +46,7 @@ export function useTicketDetail(idTicket: string): UseTicketDetailReturn {
   const [emailSendResult,    setEmailSendResult]    = useState<EmailSendResult | null>(null);
 
   const { enviarRespuestaOficial, isSendingRespuesta, error: emailErrorRaw } = useEmailSender();
-  const dataMode = useAuthStore(s => s.dataMode);
+  const dataMode = useDataMode();
 
   const idSecretariaActivo = useIdSecretariaActivo();
   const usuario = useAuthStore((s) => s.usuario);

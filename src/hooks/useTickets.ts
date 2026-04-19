@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useIdSecretariaActivo, useAuthStore, useDataMode } from '@/store/authStore';
+import { useIdSecretariaActivo, useDataMode } from '@/store/authStore';
 import { useFilterStore } from '@/store/filterStore';
 import { getTicketsBySecretaria } from '@/services/ticketService';
 import { enriquecerTicketConUrgencia } from '@/lib/urgency';
