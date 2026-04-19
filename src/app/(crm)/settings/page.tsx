@@ -13,7 +13,9 @@ import {
   LogOut,
   Hash,
   Info,
-  Check
+  Check,
+  AlertTriangle,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { obtenerIniciales } from '@/lib/utils';
@@ -32,6 +34,29 @@ export default function SettingsPage() {
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  // Estado para el reset de DB
+  const [isResetting, setIsResetting] = useState(false);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
+
+  const handleResetDB = async () => {
+    setIsResetting(true);
+    try {
+      const res = await fetch('/api/admin/reset-db', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert('Base de datos limpiada con éxito. La página se recargará.');
+        window.location.reload();
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (e) {
+      alert('Error: ' + (e instanceof Error ? e.message : 'Fallo el reset'));
+    } finally {
+      setIsResetting(false);
+      setShowConfirmReset(false);
+    }
   };
 
   return (
@@ -158,6 +183,57 @@ export default function SettingsPage() {
            Tu sesión está cifrada mediante una red privada de Tailscale para protección de datos ciudadanos.
          </p>
       </SettingsSection>
+
+      {/* 6. DANGER ZONE */}
+      <div className="pt-4">
+        <div className="bg-sem-red/5 dark:bg-sem-red/10 border-2 border-dashed border-sem-red/30 rounded-3xl p-8 space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-sem-red text-white rounded-2xl shadow-lg shadow-sem-red/20">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-sem-red uppercase tracking-tight">Zona de Peligro (Presentación)</h2>
+              <p className="text-xs text-sem-red/70 font-medium">Acciones irreversibles para limpieza de entorno</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white dark:bg-dark-surface rounded-2xl border border-sem-red/10">
+            <div className="space-y-1">
+              <p className="text-sm font-black text-gov-gray-900 dark:text-dark-text">Limpiar Base de Datos (MotherDuck)</p>
+              <p className="text-xs text-gov-gray-500 dark:text-dark-muted max-w-sm">
+                Elimina todos los tickets y registros actuales para iniciar una demostración desde cero. 
+                <span className="font-bold text-sem-red italic"> Esta acción no se puede deshacer.</span>
+              </p>
+            </div>
+
+            {showConfirmReset ? (
+              <div className="flex gap-2 w-full md:w-auto">
+                <button 
+                  onClick={handleResetDB}
+                  disabled={isResetting}
+                  className="flex-1 md:flex-none px-6 py-3 bg-sem-red text-white text-xs font-black uppercase rounded-xl hover:bg-sem-red-dark transition-all animate-pulse"
+                >
+                  {isResetting ? 'Limpiando...' : '¡SÍ, ELIMINAR TODO!'}
+                </button>
+                <button 
+                  onClick={() => setShowConfirmReset(false)}
+                  className="flex-1 md:flex-none px-6 py-3 bg-gov-gray-100 dark:bg-dark-border text-gov-gray-600 dark:text-dark-muted text-xs font-black uppercase rounded-xl"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowConfirmReset(true)}
+                className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-white dark:bg-dark-surface border-2 border-sem-red text-sem-red text-xs font-black uppercase rounded-xl hover:bg-sem-red hover:text-white transition-all group"
+              >
+                <Trash2 size={16} className="group-hover:rotate-12 transition-transform" />
+                Vaciar Base de Datos
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* 6. CIERRE DE SESIÓN */}
       <div className="flex justify-center pt-8">
